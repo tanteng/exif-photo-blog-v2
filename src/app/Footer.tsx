@@ -46,21 +46,7 @@ export default function Footer() {
                 'text-dim min-h-10',
               )}>
               <div className="flex gap-x-3 xs:gap-x-4 grow flex-wrap">
-                {userEmail || userEmailEager
-                  ? <>
-                    <div className="truncate max-w-full">
-                      {userEmail || userEmailEager}
-                    </div>
-                    <form action={() => signOutAction()
-                      .then(clearAuthStateAndRedirectIfNecessary)}>
-                      <SubmitButtonWithStatus styleAs="link">
-                        {appText.auth.signOut}
-                      </SubmitButtonWithStatus>
-                    </form>
-                  </>
-                  : isCheckingAuth
-                    ? <Spinner size={16} className="translate-y-[2px]" />
-                    : SHOW_REPO_LINK
+                {SHOW_REPO_LINK
                       ? <RepoLink />
                       : <Link href={PATH_ADMIN_PHOTOS}>
                         {appText.nav.admin}
