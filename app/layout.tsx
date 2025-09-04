@@ -134,8 +134,6 @@ export default function RootLayout({
                   <CommandK />
                 </SharedHoverProvider>
               </SwrConfigClient>
-              <Analytics debug={false} />
-              <SpeedInsights debug={false}  />
               <PhotoEscapeHandler />
               <ToasterWithThemes />
             </ThemeProvider>
