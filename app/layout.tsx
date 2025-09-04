@@ -32,6 +32,7 @@ import '../tailwind.css';
 
 export const metadata: Metadata = {
   title: META_TITLE,
+  creator: '谈腾',
   description: META_DESCRIPTION,
   ...BASE_URL && { metadataBase: new URL(BASE_URL) },
   openGraph: {
