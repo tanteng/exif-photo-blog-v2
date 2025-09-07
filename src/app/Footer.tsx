@@ -8,22 +8,12 @@ import { SHOW_REPO_LINK } from '@/app/config';
 import RepoLink from '../components/RepoLink';
 import { usePathname } from 'next/navigation';
 import { PATH_ADMIN_PHOTOS, isPathAdmin, isPathSignIn } from './path';
-import SubmitButtonWithStatus from '@/components/SubmitButtonWithStatus';
-import { signOutAction } from '@/auth/actions';
 import AnimateItems from '@/components/AnimateItems';
 import { useAppState } from '@/app/AppState';
-import Spinner from '@/components/Spinner';
 import { useAppText } from '@/i18n/state/client';
 
 export default function Footer() {
   const pathname = usePathname();
-
-  const {
-    userEmail,
-    userEmailEager,
-    isCheckingAuth,
-    clearAuthStateAndRedirectIfNecessary,
-  } = useAppState();
 
   const appText = useAppText();
 
@@ -46,11 +36,6 @@ export default function Footer() {
                 'text-dim min-h-10',
               )}>
               <div className="flex gap-x-3 xs:gap-x-4 grow flex-wrap">
-                {SHOW_REPO_LINK
-                      ? <RepoLink />
-                      : <Link href={PATH_ADMIN_PHOTOS}>
-                        {appText.nav.admin}
-                      </Link>}
               </div>
               <div className="flex items-center h-10">
                 <ThemeSwitcher />
