@@ -212,8 +212,7 @@ export const HAS_MINIO_STORAGE =
 // Includes separate check for client-side usage, i.e., url construction
 export const HAS_TENCENT_COS_STORAGE_CLIENT =
   Boolean(process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET) &&
-  Boolean(process.env.NEXT_PUBLIC_TENCENT_COS_REGION) &&
-  Boolean(process.env.NEXT_PUBLIC_TENCENT_COS_APP_ID);
+  Boolean(process.env.NEXT_PUBLIC_TENCENT_COS_REGION);
 export const HAS_TENCENT_COS_STORAGE =
   HAS_TENCENT_COS_STORAGE_CLIENT &&
   Boolean(process.env.TENCENT_COS_SECRET_ID) &&
