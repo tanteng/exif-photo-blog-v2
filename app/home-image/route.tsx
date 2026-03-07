@@ -9,7 +9,8 @@ import { getImageResponseCacheControlHeaders } from '@/image-response/cache';
 import { APP_OG_IMAGE_QUERY_OPTIONS } from '@/feed';
 import { ImageResponse } from 'next/og';
 
-export const dynamic = 'force-static';
+// Use force-dynamic to skip build-time prerendering which can fail with corrupted images
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -40,7 +41,6 @@ export async function GET() {
     );
   } catch (error) {
     console.error('Error generating home image:', error);
-    // Return a minimal valid response on error
     return new Response('Image generation failed', { status: 500 });
   }
 }
