@@ -17,13 +17,12 @@ import {
   getUniqueLenses,
   getUniqueRecipes,
   getUniqueYears,
-} from '@/photo/db/query';
-import { PhotoQueryOptions } from './db';
+  getPhotosInNeedOfUpdateCount,
+} from '@/photo/query';
+import { PhotoQueryOptions } from '@/db';
 import { parseCachedPhotoDates, parseCachedPhotosDates } from '@/photo';
 import { createCameraKey } from '@/camera';
 import {
-  PATHS_ADMIN,
-  PATHS_TO_CACHE,
   PATH_ADMIN,
   PATH_FULL,
   PATH_GRID,
@@ -36,23 +35,30 @@ import {
   PREFIX_TAG,
   pathForPhoto,
   PREFIX_YEAR,
+  PREFIX_ALBUM,
 } from '@/app/path';
 import { createLensKey } from '@/lens';
-
-// Table key
-export const KEY_PHOTOS     = 'photos';
-const KEY_PHOTO             = 'photo';
-// Field keys
-const KEY_CAMERAS           = 'cameras';
-const KEY_LENSES            = 'lenses';
-const KEY_TAGS              = 'tags';
-const KEY_FILMS             = 'films';
-const KEY_RECIPES           = 'recipes';
-const KEY_FOCAL_LENGTHS     = 'focal-lengths';
-const KEY_YEARS             = 'years';
-// Type keys
-const KEY_COUNT             = 'count';
-const KEY_DATE_RANGE        = 'date-range';
+import {
+  KEY_PHOTOS,
+  KEY_PHOTO,
+  KEY_CAMERAS,
+  KEY_LENSES,
+  KEY_TAGS,
+  KEY_FILMS,
+  KEY_RECIPES,
+  KEY_FOCAL_LENGTHS,
+  KEY_YEARS,
+  KEY_COUNT,
+  KEY_DATE_RANGE,
+  revalidateYearsKey,
+  revalidateCamerasKey,
+  revalidateLensesKey,
+  revalidateAlbumsKey,
+  revalidateTagsKey,
+  revalidateFilmsKey,
+  revalidateRecipesKey,
+  revalidateFocalLengthsKey,
+} from '@/cache';
 
 const getCacheKeyForPhotoQueryOptions = (
   options: PhotoQueryOptions,
@@ -61,12 +67,16 @@ const getCacheKeyForPhotoQueryOptions = (
   switch (option) {
   // Complex keys
     case 'camera': {
-      const value = options[option];
-      return value ? `${option}-${createCameraKey(value)}` : null;
+      const camera = options[option];
+      return camera ? `${option}-${createCameraKey(camera)}` : null;
     }
     case 'lens': {
-      const value = options[option];
-      return value ? `${option}-${createLensKey(value)}` : null;
+      const lens = options[option];
+      return lens ? `${option}-${createLensKey(lens)}` : null;
+    }
+    case 'album': {
+      const album = options[option];
+      return album?.id ? `${option}-${album.id}` : null;
     }
     case 'takenBefore':
     case 'takenAfterInclusive': 
@@ -95,68 +105,26 @@ const getPhotosCacheKeys = (options: PhotoQueryOptions = {}) => {
   return tags;
 };
 
-export const revalidatePhotosKey = () =>
-  revalidateTag(KEY_PHOTOS);
-
-export const revalidateTagsKey = () =>
-  revalidateTag(KEY_TAGS);
-
-export const revalidateRecipesKey = () =>
-  revalidateTag(KEY_RECIPES);
-
-export const revalidateCamerasKey = () =>
-  revalidateTag(KEY_CAMERAS);
-
-export const revalidateLensesKey = () =>
-  revalidateTag(KEY_LENSES);
-
-export const revalidateFilmsKey = () =>
-  revalidateTag(KEY_FILMS);
-
-export const revalidateFocalLengthsKey = () =>
-  revalidateTag(KEY_FOCAL_LENGTHS);
-
-export const revalidateYearsKey = () =>
-  revalidateTag(KEY_YEARS);
-
-export const revalidateAllKeys = () => {
-  revalidatePhotosKey();
-  revalidateTagsKey();
-  revalidateCamerasKey();
-  revalidateLensesKey();
-  revalidateFilmsKey();
-  revalidateRecipesKey();
-  revalidateFocalLengthsKey();
-  revalidateYearsKey();
-};
-
-export const revalidateAdminPaths = () => {
-  PATHS_ADMIN.forEach(path => revalidatePath(path));
-};
-
-export const revalidateAllKeysAndPaths = () => {
-  revalidateAllKeys();
-  PATHS_TO_CACHE.forEach(path => revalidatePath(path, 'layout'));
-};
-
 export const revalidatePhoto = (photoId: string) => {
   // Tags
-  revalidateTag(photoId);
-  revalidateTagsKey();
+  revalidateTag(photoId, 'max');
+  revalidateYearsKey();
   revalidateCamerasKey();
   revalidateLensesKey();
+  revalidateAlbumsKey();
+  revalidateTagsKey();
   revalidateFilmsKey();
   revalidateRecipesKey();
   revalidateFocalLengthsKey();
-  revalidateYearsKey();
   // Paths
   revalidatePath(pathForPhoto({ photo: photoId }), 'layout');
   revalidatePath(PATH_ROOT, 'layout');
   revalidatePath(PATH_GRID, 'layout');
   revalidatePath(PATH_FULL, 'layout');
-  revalidatePath(PREFIX_TAG, 'layout');
   revalidatePath(PREFIX_CAMERA, 'layout');
   revalidatePath(PREFIX_LENS, 'layout');
+  revalidatePath(PREFIX_ALBUM, 'layout');
+  revalidatePath(PREFIX_TAG, 'layout');
   revalidatePath(PREFIX_FILM, 'layout');
   revalidatePath(PREFIX_RECIPE, 'layout');
   revalidatePath(PREFIX_FOCAL_LENGTH, 'layout');
@@ -212,6 +180,12 @@ export const getPhotoCached = (...args: Parameters<typeof getPhoto>) =>
     [KEY_PHOTOS, KEY_PHOTO],
   )(...args).then(photo => photo ? parseCachedPhotoDates(photo) : undefined);
 
+export const getPhotosInNeedOfUpdateCountCached =
+  unstable_cache(
+    getPhotosInNeedOfUpdateCount,
+    [KEY_PHOTOS, KEY_COUNT],
+  );
+  
 export const getUniqueTagsCached =
   unstable_cache(
     getUniqueTags,

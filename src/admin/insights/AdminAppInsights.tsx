@@ -7,9 +7,10 @@ import {
   getUniqueRecipes,
   getUniqueTags,
   getPhotosInNeedOfUpdateCount,
-} from '@/photo/db/query';
+} from '@/photo/query';
 import AdminAppInsightsClient from './AdminAppInsightsClient';
 import { getAllInsights, getGitHubMetaForCurrentApp } from '.';
+import { APP_CONFIGURATION, USED_DEPRECATED_ENV_VARS } from '@/app/config';
 
 export default async function AdminAppInsights() {
   const [
@@ -41,12 +42,16 @@ export default async function AdminAppInsights() {
   return (
     <AdminAppInsightsClient
       codeMeta={codeMeta}
+      nextVersion={APP_CONFIGURATION.nextVersion}
+      reactVersion={APP_CONFIGURATION.reactVersion}
+      nodeVersion={APP_CONFIGURATION.nodeVersion}
       insights={getAllInsights({
         codeMeta,
         photosCount,
         photosCountNeedSync,
         photosCountPortrait,
       })}
+      usedDeprecatedEnvVars={USED_DEPRECATED_ENV_VARS}
       photoStats={{
         photosCount,
         photosCountHidden,

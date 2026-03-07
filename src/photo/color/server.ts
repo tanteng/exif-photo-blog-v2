@@ -1,5 +1,4 @@
 import { convertRgbToOklab, parseHex } from 'culori';
-import { getNextImageUrlForManipulation } from '@/platforms/next-image';
 import {
   AI_CONTENT_GENERATION_ENABLED,
   IS_PREVIEW,
@@ -11,6 +10,7 @@ import { extractColors } from 'extract-colors';
 import { getImageBase64FromUrl } from '../server';
 import { generateOpenAiImageQuery } from '@/platforms/openai';
 import { calculateColorSort } from './sort';
+import { getOptimizedPhotoUrlForManipulation } from '../storage';
 
 const NULL_RGB = { r: 0, g: 0, b: 0 };
 
@@ -29,7 +29,7 @@ export const convertHexToOklch = (hex: string): Oklch => {
 
 // Convert image url to byte array
 const getImageDataFromUrl = async (_url: string) => {
-  const url = getNextImageUrlForManipulation(_url, IS_PREVIEW);
+  const url = getOptimizedPhotoUrlForManipulation(_url, IS_PREVIEW);
   const imageBuffer = await fetch(decodeURIComponent(url))
     .then(res => res.arrayBuffer());
   const image = sharp(imageBuffer);
@@ -119,16 +119,16 @@ export const getColorFieldsForPhotoForm = async (
 
 export const getColorFromAI = async (
   _url: string,
-  useBatch?: boolean,
+  isBatch?: boolean,
 ) => {
-  const url = getNextImageUrlForManipulation(_url, IS_PREVIEW);
+  const url = getOptimizedPhotoUrlForManipulation(_url, IS_PREVIEW);
   const image = await getImageBase64FromUrl(url);
   const hexColor = await generateOpenAiImageQuery(image, `
     Does this image have a primary subject color?
     If yes, what is the approximate hex color of the subject.
     If not, what is the approximate hex color of the background?
     Respond only with a hex color value:
-  `, useBatch);
+  `, isBatch);
   const hex = hexColor?.match(/#*([a-f0-9]{6})/i)?.[1];
   if (hex) {
     return convertHexToOklch(`#${hex}`);

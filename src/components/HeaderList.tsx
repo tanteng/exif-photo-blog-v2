@@ -6,6 +6,7 @@ import { ReactNode, useState } from 'react';
 import LoaderButton from './primitives/LoaderButton';
 import { IoChevronDownOutline, IoChevronUpOutline } from 'react-icons/io5';
 import { COLLAPSE_SIDEBAR_CATEGORIES } from '@/app/config';
+import { useAppText } from '@/i18n/state/client';
 
 export default function HeaderList({
   title,
@@ -20,6 +21,8 @@ export default function HeaderList({
   items: ReactNode[],
   maxItems?: number,
 }) {
+  const { utility } = useAppText();
+
   const [isExpanded, setIsExpanded] = useState(false);
 
   const hasItemsToExpand =
@@ -41,6 +44,8 @@ export default function HeaderList({
             'dark:text-gray-100',
             'flex items-center mb-1 gap-1',
             'uppercase select-none',
+            'text-sm tracking-wide',
+            'translate-x-px',
           )}
         >
           {icon &&
@@ -64,17 +69,17 @@ export default function HeaderList({
               className={clsx(
                 'mt-0.5',
                 'text-xs font-medium tracking-wider',
-                'border-medium rounded-md',
+                'border border-medium rounded-md',
                 'px-[5px] h-5!',
                 'hover:bg-dim hover:text-main active:bg-main',
                 'group',
               )}
             >
-              {<span className="flex items-center gap-1">
+              {<span className="flex items-center gap-1 uppercase">
                 {isExpanded
-                  ? 'LESS'
+                  ? utility.less
                   : <>
-                    MORE
+                    {utility.more}
                     <span className="hidden group-hover:inline text-dim!">
                       {' '}
                       {items.length - maxItems}

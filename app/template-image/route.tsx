@@ -4,10 +4,10 @@ import {
   MAX_PHOTOS_TO_SHOW_TEMPLATE,
 } from '@/image-response';
 import TemplateImageResponse from
-  '@/image-response/TemplateImageResponse';
+  '@/app/TemplateImageResponse';
 import { getIBMPlexMono } from '@/app/font';
 import { getImageResponseCacheControlHeaders } from '@/image-response/cache';
-import { safePhotoImageResponse } from '@/platforms/safe-photo-image-response';
+import { ImageResponse } from 'next/og';
 
 export async function GET() {
   const [
@@ -25,16 +25,13 @@ export async function GET() {
 
   const { width, height } = GRID_OG_DIMENSION;
 
-  return safePhotoImageResponse(
-    photos,
-    isNextImageReady => (
-      <TemplateImageResponse {...{
-        photos: isNextImageReady ? photos : [],
-        width,
-        height,
-        fontFamily,
-      }}/>
-    ),
+  return new ImageResponse(
+    <TemplateImageResponse {...{
+      photos,
+      width,
+      height,
+      fontFamily,
+    }}/>,
     { width, height, fonts, headers },
   );
 }

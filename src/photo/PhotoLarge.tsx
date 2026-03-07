@@ -9,7 +9,6 @@ import {
   shouldShowFilmDataForPhoto,
   shouldShowLensDataForPhoto,
   shouldShowRecipeDataForPhoto,
-  titleForPhoto,
 } from '.';
 import AppGrid from '@/components/AppGrid';
 import ImageLarge from '@/components/image/ImageLarge';
@@ -49,12 +48,14 @@ import PhotoRecipe from '@/recipe/PhotoRecipe';
 import PhotoLens from '@/lens/PhotoLens';
 import { lensFromPhoto } from '@/lens';
 import MaskedScroll from '@/components/MaskedScroll';
-import useCategoryCountsForPhoto from '@/category/useCategoryCountsForPhoto';
 import { useAppText } from '@/i18n/state/client';
+import { Album } from '@/album';
+import AdminPhotoStorageCheck from '@/admin/storage/AdminPhotoStorageCheck';
 
 export default function PhotoLarge({
   photo,
   className,
+  album,
   primaryTag,
   priority,
   prefetch = SHOULD_PREFETCH_ALL_LINKS,
@@ -75,6 +76,7 @@ export default function PhotoLarge({
   shouldShareYear,
   shouldShareCamera,
   shouldShareLens,
+  shouldShareAlbum,
   shouldShareTag,
   shouldShareFilm,
   shouldShareRecipe,
@@ -82,9 +84,11 @@ export default function PhotoLarge({
   includeFavoriteInAdminMenu,
   onVisible,
   showAdminKeyCommands,
+  showStorageCheck,
 }: {
   photo: Photo
   className?: string
+  album?: Album
   primaryTag?: string
   priority?: boolean
   prefetch?: boolean
@@ -105,6 +109,7 @@ export default function PhotoLarge({
   shouldShareYear?: boolean
   shouldShareCamera?: boolean
   shouldShareLens?: boolean
+  shouldShareAlbum?: boolean
   shouldShareTag?: boolean
   shouldShareFilm?: boolean
   shouldShareRecipe?: boolean
@@ -112,6 +117,7 @@ export default function PhotoLarge({
   includeFavoriteInAdminMenu?: boolean
   onVisible?: () => void
   showAdminKeyCommands?: boolean
+  showStorageCheck?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const refZoomControls = useRef<ZoomControlsRef>(null);
@@ -126,14 +132,6 @@ export default function PhotoLarge({
   } = useAppState();
 
   const appText = useAppText();
-
-  const {
-    cameraCount,
-    lensCount,
-    tagCounts,
-    recipeCount,
-    filmCount,
-  } = useCategoryCountsForPhoto(photo);
 
   const showZoomControls = _showZoomControls && areZoomControlsShown;
   const selectZoomImageElement = useCallback(
@@ -264,7 +262,6 @@ export default function PhotoLarge({
       photo,
       revalidatePhoto,
       includeFavorite: includeFavoriteInAdminMenu,
-      ariaLabel: `Admin menu for '${titleForPhoto(photo)}' photo`,
       showKeyCommands: showAdminKeyCommands,
     }} />;
 
@@ -332,14 +329,12 @@ export default function PhotoLarge({
                               camera={camera}
                               contrast="medium"
                               prefetch={prefetchRelatedLinks}
-                              countOnHover={cameraCount}
                             />}
                           {showLensContent &&
                             <PhotoLens
                               lens={lens}
                               contrast="medium"
                               prefetch={prefetchRelatedLinks}
-                              countOnHover={lensCount}
                             />}
                         </div>}
                       {showRecipeContent && recipeTitle &&
@@ -348,14 +343,12 @@ export default function PhotoLarge({
                           recipe={recipeTitle}
                           contrast="medium"
                           prefetch={prefetchRelatedLinks}
-                          countOnHover={recipeCount}
                           toggleRecipeOverlay={toggleRecipeOverlay}
                           isShowingRecipeOverlay={isShowingRecipeOverlay}
                         />}
                       {showTagsContent &&
                         <PhotoTags
                           tags={tags}
-                          tagCounts={tagCounts}
                           contrast="medium"
                           prefetch={prefetchRelatedLinks}
                         />}
@@ -414,8 +407,8 @@ export default function PhotoLarge({
                       <PhotoFilm
                         ref={refPhotoFilm}
                         film={photo.film}
+                        make={photo.make}
                         prefetch={prefetchRelatedLinks}
-                        countOnHover={filmCount}
                         {...photo.recipeData && !photo.recipeTitle && {
                           toggleRecipeOverlay,
                           isShowingRecipeOverlay,
@@ -462,6 +455,9 @@ export default function PhotoLarge({
                         year={shouldShareYear
                           ? year
                           : undefined}
+                        album={shouldShareAlbum
+                          ? album
+                          : undefined}
                         tag={shouldShareTag
                           ? primaryTag
                           : undefined}
@@ -488,6 +484,8 @@ export default function PhotoLarge({
                         photo={photo} 
                       />}
                   </div>
+                  {showStorageCheck &&
+                    <AdminPhotoStorageCheck photo={photo} />}
                 </div>
               </div>
             </DivDebugBaselineGrid>

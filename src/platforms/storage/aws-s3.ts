@@ -4,9 +4,11 @@ import {
   DeleteObjectCommand,
   ListObjectsCommand,
   PutObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { StorageListResponse, generateStorageId } from '.';
-import { formatBytesToMB } from '@/utility/number';
+import { formatBytes } from '@/utility/number';
 
 const AWS_S3_BUCKET = process.env.NEXT_PUBLIC_AWS_S3_BUCKET ?? '';
 const AWS_S3_REGION = process.env.NEXT_PUBLIC_AWS_S3_REGION ?? '';
@@ -29,9 +31,6 @@ const urlForKey = (key?: string) => `${AWS_S3_BASE_URL}/${key}`;
 
 export const isUrlFromAwsS3 = (url?: string) =>
   AWS_S3_BASE_URL && url?.startsWith(AWS_S3_BASE_URL);
-
-export const awsS3PutObjectCommandForKey = (Key: string) =>
-  new PutObjectCommand({ Bucket: AWS_S3_BUCKET, Key, ACL: 'public-read' });
 
 export const awsS3Put = async (
   file: Buffer,
@@ -75,7 +74,7 @@ export const awsS3List = async (
       url: urlForKey(Key),
       fileName: Key ?? '',
       uploadedAt: LastModified,
-      size: Size ? formatBytesToMB(Size) : undefined,
+      size: Size ? formatBytes(Size) : undefined,
     })) ?? []);
 
 export const awsS3Delete = async (Key: string) => {
@@ -83,4 +82,16 @@ export const awsS3Delete = async (Key: string) => {
     Bucket: AWS_S3_BUCKET,
     Key,
   }));
+};
+
+export const awsS3GetSignedUrl = (
+  Key: string,
+  method: 'GET' | 'PUT',
+  expiresIn: number,
+) => {
+  const client = awsS3Client();
+  const command = method === 'GET'
+    ? new GetObjectCommand({ Bucket: AWS_S3_BUCKET, Key })
+    : new PutObjectCommand({ Bucket: AWS_S3_BUCKET, Key, ACL: 'public-read' });
+  return getSignedUrl(client, command, { expiresIn });
 };

@@ -3,6 +3,7 @@ import { getDataForCategoriesCached } from '@/category/cache';
 import {
   ABSOLUTE_PATH_FULL,
   ABSOLUTE_PATH_GRID,
+  absolutePathForAlbum,
   absolutePathForCamera,
   absolutePathForFilm,
   absolutePathForFocalLength,
@@ -15,7 +16,11 @@ import {
 } from '@/app/path';
 import { isTagFavs } from '@/tag';
 import { BASE_URL, GRID_HOMEPAGE_ENABLED } from '@/app/config';
-import { getPhotoIdsAndUpdatedAt } from '@/photo/db/query';
+import { getAllPhotoIdsWithUpdatedAt } from '@/photo/query';
+import {
+  getLastModifiedForCategories,
+  NULL_CATEGORY_DATA,
+} from '@/category/data';
 
 // Cache for 24 hours
 export const revalidate = 86_400;
@@ -28,44 +33,29 @@ const PRIORITY_PHOTO            = 0.5;
  
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [
-    {
-      recents,
-      years,
-      cameras,
-      lenses,
-      tags,
-      recipes,
-      films,
-      focalLengths,
-    },
+    categories,
     photos,
   ] = await Promise.all([
-    getDataForCategoriesCached().catch(() => ({
-      recents: [],
-      years: [],
-      cameras: [],
-      lenses: [],
-      tags: [],
-      recipes: [],
-      films: [],
-      focalLengths: [],
-    })),
-    getPhotoIdsAndUpdatedAt().catch(() => []),
+    getDataForCategoriesCached().catch(() => NULL_CATEGORY_DATA),
+    getAllPhotoIdsWithUpdatedAt().catch(() => []),
   ]);
 
-  const lastModifiedSite = [
-    ...recents.map(({ lastModified }) => lastModified),
-    ...years.map(({ lastModified }) => lastModified),
-    ...cameras.map(({ lastModified }) => lastModified),
-    ...lenses.map(({ lastModified }) => lastModified),
-    ...tags.map(({ lastModified }) => lastModified),
-    ...recipes.map(({ lastModified }) => lastModified),
-    ...films.map(({ lastModified }) => lastModified),
-    ...focalLengths.map(({ lastModified }) => lastModified),
-    ...photos.map(({ updatedAt }) => updatedAt),
-  ]
-    .filter(date => date instanceof Date)
-    .sort((a, b) => b.getTime() - a.getTime())[0];
+  const {
+    recents,
+    years,
+    cameras,
+    lenses,
+    albums,
+    tags,
+    recipes,
+    films,
+    focalLengths,
+  } = categories;
+
+  const lastModifiedSite = getLastModifiedForCategories(
+    categories,
+    photos,
+  );
 
   return [
     // Homepage
@@ -101,6 +91,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Lenses
     ...lenses.map(({ lens, lastModified }) => ({
       url: absolutePathForLens(lens),
+      priority: PRIORITY_CATEGORY,
+      lastModified,
+    })),
+    // Albums
+    ...albums.map(({ album, lastModified }) => ({
+      url: absolutePathForAlbum(album),
       priority: PRIORITY_CATEGORY,
       lastModified,
     })),

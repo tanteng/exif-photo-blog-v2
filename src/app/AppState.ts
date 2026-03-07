@@ -18,8 +18,6 @@ import { SWRKey } from '@/swr';
 
 export type AppStateContextType = {
   // CORE
-  previousPathname?: string
-  hasLoaded?: boolean
   hasLoadedWithAnimations?: boolean
   invalidateSwr?: (key?: SWRKey, revalidate?: boolean) => void
   nextPhotoAnimation?: AnimationConfig
@@ -31,6 +29,9 @@ export type AppStateContextType = {
   categoriesWithCounts?: Awaited<ReturnType<
     typeof getCountsForCategoriesCachedAction
   >>
+  // ENVIRONMENT
+  timezone?: string
+  supportsHover?: boolean
   // MODAL
   isCommandKOpen?: boolean
   setIsCommandKOpen?: Dispatch<SetStateAction<boolean>>
@@ -53,10 +54,6 @@ export type AppStateContextType = {
   isLoadingAdminData?: boolean
   refreshAdminData?: () => void
   updateAdminData?: (updatedData: Partial<AdminData>) => void
-  selectedPhotoIds?: string[]
-  setSelectedPhotoIds?: Dispatch<SetStateAction<string[] | undefined>>
-  isPerformingSelectEdit?: boolean
-  setIsPerformingSelectEdit?: Dispatch<SetStateAction<boolean>>
   insightsIndicatorStatus?: InsightsIndicatorStatus
   // UPLOAD
   startUpload?: () => Promise<boolean>

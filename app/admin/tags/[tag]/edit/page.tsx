@@ -12,7 +12,7 @@ interface Props {
   params: Promise<{ tag: string }>
 }
 
-export default async function PhotoPageEdit({
+export default async function TagPageEdit({
   params,
 }: Props) {
   const { tag: tagFromParams } = await params;
@@ -23,8 +23,8 @@ export default async function PhotoPageEdit({
     { count },
     photos,
   ] = await Promise.all([
-    getPhotosMetaCached({ tag }),
-    getPhotosCached({ tag, limit: MAX_PHOTO_TO_SHOW }),
+    getPhotosMetaCached({ tag, hidden: 'include' }),
+    getPhotosCached({ tag, limit: MAX_PHOTO_TO_SHOW, hidden: 'include' }),
   ]);
 
   if (count === 0) { redirect(PATH_ADMIN); }
@@ -35,7 +35,7 @@ export default async function PhotoPageEdit({
       backLabel="Tags"
       breadcrumb={<AdminTagBadge {...{ tag, count, hideBadge: true }} />}
     >
-      <AdminTagForm {...{ tag, photos }}>
+      <AdminTagForm {...{ tag }}>
         <PhotoLightbox
           {...{ count, photos, tag }}
           maxPhotosToShow={MAX_PHOTO_TO_SHOW}

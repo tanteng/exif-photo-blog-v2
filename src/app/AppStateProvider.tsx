@@ -9,7 +9,6 @@ import {
 } from 'react';
 import { AppStateContext } from '../app/AppState';
 import { AnimationConfig } from '@/components/AnimateItems';
-import usePathnames from '@/utility/usePathnames';
 import { getAuthAction } from '@/auth/actions';
 import useSWR, { useSWRConfig } from 'swr';
 import {
@@ -41,6 +40,7 @@ import {
   SWRKey,
 } from '@/swr';
 import { warmRedisAction } from './actions';
+import useSupportsHover from '@/utility/useSupportsHover';
 
 export default function AppStateProvider({
   children,
@@ -53,21 +53,17 @@ export default function AppStateProvider({
 
   const pathname = usePathname();
 
-  const { previousPathname } = usePathnames();
-
   // CORE
-  const [hasLoaded, setHasLoaded] =
-    useState(false);
   const [hasLoadedWithAnimations, setHasLoadedWithAnimations] =
     useState(false);
   const [nextPhotoAnimation, _setNextPhotoAnimation] =
     useState<AnimationConfig>();
+  const [nextPhotoAnimationId, setNextPhotoAnimationId] =
+    useState<string>();
   const setNextPhotoAnimation = useCallback((animation?: AnimationConfig) => {
     _setNextPhotoAnimation(animation);
     setNextPhotoAnimationId(undefined);
   }, []);
-  const [nextPhotoAnimationId, setNextPhotoAnimationId] =
-    useState<string>();
   const getNextPhotoAnimationId = useCallback(() => {
     const id = nanoid();
     setNextPhotoAnimationId(id);
@@ -81,6 +77,9 @@ export default function AppStateProvider({
   }, [nextPhotoAnimationId, setNextPhotoAnimation]);
   const [shouldRespondToKeyboardCommands, setShouldRespondToKeyboardCommands] =
     useState(true);
+  // ENVIRONMENT
+  const [timezone, setTimezone] = useState<string>();
+  const supportsHover = useSupportsHover();
   // MODAL
   const [isCommandKOpen, setIsCommandKOpen] =
     useState(false);
@@ -93,13 +92,11 @@ export default function AppStateProvider({
     useState<string>();
   const [userEmailEager, setUserEmailEager] =
     useState<string>();
+  const isUserSignedIn = Boolean(userEmail);
+  const isUserSignedInEager = Boolean(userEmailEager);
   // ADMIN
   const [adminUpdateTimes, setAdminUpdateTimes] =
     useState<Date[]>([]);
-  const [selectedPhotoIds, setSelectedPhotoIds] =
-    useState<string[] | undefined>();
-  const [isPerformingSelectEdit, setIsPerformingSelectEdit] =
-    useState(false);
   // UPLOAD
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [uploadState, _setUploadState] = useState(INITIAL_UPLOAD_STATE);
@@ -120,9 +117,11 @@ export default function AppStateProvider({
     useState(false);
 
   useEffect(() => {
-    setHasLoaded(true);
     storeTimezoneCookie();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUserEmailEager(getAuthEmailCookie());
+    // Capture backup timezone on client
+    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
     if (IS_PRODUCTION) { warmRedisAction(); }
     const timeout = setTimeout(() => {
       setHasLoadedWithAnimations(true);
@@ -154,6 +153,7 @@ export default function AppStateProvider({
   } = useSWR(SWR_KEYS.GET_AUTH, getAuthAction);
   useEffect(() => {
     if (auth === null || authError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserEmail(undefined);
       setUserEmailEager(undefined);
       clearAuthEmailCookie();
@@ -161,8 +161,6 @@ export default function AppStateProvider({
       setUserEmail(auth?.user?.email ?? undefined);
     }
   }, [auth, authError]);
-  const isUserSignedIn = Boolean(userEmail);
-  const isUserSignedInEager = Boolean(userEmailEager);
 
   const {
     data: adminData,
@@ -204,16 +202,17 @@ export default function AppStateProvider({
   }, [router, pathname]);
 
   // Returns false when upload is cancelled
-  const startUpload = useCallback(() => new Promise<boolean>(resolve => {
-    if (uploadInputRef.current) {
-      uploadInputRef.current.value = '';
-      uploadInputRef.current.click();
-      uploadInputRef.current.oninput = () => resolve(true);
-      uploadInputRef.current.oncancel = () => resolve(false);
-    } else {
-      resolve(false);
-    }
-  })
+  const startUpload = useCallback(() =>
+    new Promise<boolean>(resolve => {
+      if (uploadInputRef.current) {
+        uploadInputRef.current.value = '';
+        uploadInputRef.current.click();
+        uploadInputRef.current.oninput = () => resolve(true);
+        uploadInputRef.current.oncancel = () => resolve(false);
+      } else {
+        resolve(false);
+      }
+    })
   , []);
   const setUploadState = useCallback((uploadState: Partial<UploadState>) => {
     _setUploadState(prev => ({ ...prev, ...uploadState }));
@@ -226,8 +225,6 @@ export default function AppStateProvider({
     <AppStateContext.Provider
       value={{
         // CORE
-        previousPathname,
-        hasLoaded,
         hasLoadedWithAnimations,
         invalidateSwr,
         nextPhotoAnimation,
@@ -237,6 +234,9 @@ export default function AppStateProvider({
         shouldRespondToKeyboardCommands,
         setShouldRespondToKeyboardCommands,
         categoriesWithCounts,
+        // ENVIRONMENT
+        timezone,
+        supportsHover,
         // MODAL
         isCommandKOpen,
         setIsCommandKOpen,
@@ -260,10 +260,6 @@ export default function AppStateProvider({
         isLoadingAdminData,
         refreshAdminData,
         updateAdminData,
-        selectedPhotoIds,
-        setSelectedPhotoIds,
-        isPerformingSelectEdit,
-        setIsPerformingSelectEdit,
         // UPLOAD
         uploadInputRef,
         startUpload,

@@ -2,18 +2,18 @@ import { generateOgImageMetaForPhotos } from '@/photo';
 import PhotosEmptyState from '@/photo/PhotosEmptyState';
 import { Metadata } from 'next/types';
 import { cache } from 'react';
-import { getPhotos } from '@/photo/db/query';
+import { getPhotos } from '@/photo/query';
 import PhotoFullPage from '@/photo/PhotoFullPage';
 import { getPhotosMetaCached } from '@/photo/cache';
 import { SortProps } from '@/photo/sort';
 import { getSortOptionsFromParams } from '@/photo/sort/path';
-import { PhotoQueryOptions } from '@/photo/db';
-import { FEED_META_QUERY_OPTIONS, getFeedQueryOptions } from '@/feed';
+import { PhotoQueryOptions } from '@/db';
+import { FEED_META_QUERY_OPTIONS, feedQueryOptions } from '@/feed';
 
 export const maxDuration = 60;
 
 const getPhotosCached = cache((options: PhotoQueryOptions) =>
-  getPhotos(getFeedQueryOptions({
+  getPhotos(feedQueryOptions({
     isGrid: false,
     ...options,
   })));

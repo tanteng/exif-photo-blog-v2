@@ -5,7 +5,9 @@ import {
   getUniqueRecipesCached,
   getUniqueTagsCached,
 } from '@/photo/cache';
+import { getAlbumsWithMetaCached } from '@/album/cache';
 import {
+  PATH_ADMIN_ALBUMS,
   PATH_ADMIN_PHOTOS,
   PATH_ADMIN_RECIPES,
   PATH_ADMIN_TAGS,
@@ -18,6 +20,7 @@ export default async function AdminNav() {
   const [
     countPhotos,
     countUploads,
+    countAlbums,
     countTags,
     countRecipes,
     mostRecentPhotoUpdateTime,
@@ -31,7 +34,9 @@ export default async function AdminNav() {
         console.error(`Error getting blob upload urls: ${e}`);
         return 0;
       }),
-    getUniqueTagsCached().then(tags => tags.length)
+    getAlbumsWithMetaCached().then(albums => albums.length)
+      .catch(() => 0),
+    getUniqueTagsCached(true).then(tags => tags.length)
       .catch(() => 0),
     getUniqueRecipesCached().then(recipes => recipes.length)
       .catch(() => 0),
@@ -54,6 +59,13 @@ export default async function AdminNav() {
     label: appText.admin.uploadPlural,
     href: PATH_ADMIN_UPLOADS,
     count: countUploads,
+  }); }
+
+  // Albums
+  if (countAlbums > 0) { items.push({
+    label: appText.category.albumPlural,
+    href: PATH_ADMIN_ALBUMS,
+    count: countAlbums,
   }); }
 
   // Tags

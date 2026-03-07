@@ -15,7 +15,7 @@ export default function useMaskedScroll({
   ref: containerRef,
   direction = 'vertical',
   fadeSize = 24,
-  animationDuration = 0.3,
+  animationDuration = 0.2,
   setMaxSize = true,
   hideScrollbar = true,
   // Disable when calling 'updateMask' explicitly
@@ -59,11 +59,11 @@ export default function useMaskedScroll({
   useEffect(() => {
     const ref = containerRef?.current;
     if (ref && updateMaskOnEvents) {
-      ref.onscroll = updateMask;
-      ref.onresize = updateMask;
+      ref.addEventListener('scroll', updateMask);
+      ref.addEventListener('resize', updateMask);
       return () => {
-        ref.onscroll = null;
-        ref.onresize = null;
+        ref.removeEventListener('scroll', updateMask);
+        ref.removeEventListener('resize', updateMask);
       };
     }
   }, [containerRef, updateMask, updateMaskOnEvents]);
@@ -84,7 +84,7 @@ export default function useMaskedScroll({
 
   useEffect(() => {
     const ref = containerRef?.current;
-    const contentRect = ref?.children[0].getBoundingClientRect();
+    const contentRect = ref?.children[0]?.getBoundingClientRect();
     if (scrollToEndOnMount && ref && contentRect) {
       ref.scrollTo(isVertical
         ? { top: contentRect.height }

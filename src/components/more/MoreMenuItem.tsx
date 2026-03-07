@@ -31,7 +31,7 @@ export default function MoreMenuItem({
   labelComplex?: ReactNode
   annotation?: ReactNode
   icon?: ReactNode
-  color?: 'grey' | 'red'
+  color?: 'grey' | 'red' | 'yellow'
   href?: string
   hrefDownloadName?: string
   className?: string
@@ -52,6 +52,10 @@ export default function MoreMenuItem({
       case 'red': return clsx(
         'hover:bg-red-100/50 active:bg-red-100/75',
         'dark:hover:bg-red-950/55 dark:active:bg-red-950/80',
+      );
+      case 'yellow': return clsx(
+        'hover:bg-amber-100/50 active:bg-amber-100/75',
+        'dark:hover:bg-amber-950/55 dark:active:bg-amber-950/80',
       );
     }
   };
@@ -121,6 +125,7 @@ export default function MoreMenuItem({
             'text-sm text-main hover:text-main',
             // Enlarge clickable area
             '-m-2 p-2',
+            keyCommand && 'sm:-mr-10',
           )}
           onLoad={() => {
             action?.();
@@ -143,7 +148,7 @@ export default function MoreMenuItem({
       {keyCommand &&
         <KeyCommand
           modifier={keyCommandModifier}
-          className="hidden! sm:inline-flex!"
+          className="max-sm:hidden pointer-events-none"
         >
           {keyCommand}
         </KeyCommand>}

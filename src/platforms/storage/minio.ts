@@ -4,9 +4,11 @@ import {
   ListObjectsCommand,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { StorageListResponse, generateStorageId } from '.';
-import { formatBytesToMB } from '@/utility/number';
+import { formatBytes } from '@/utility/number';
 
 const MINIO_BUCKET = process.env.NEXT_PUBLIC_MINIO_BUCKET ?? '';
 const MINIO_DOMAIN = process.env.NEXT_PUBLIC_MINIO_DOMAIN ?? '';
@@ -39,9 +41,6 @@ const urlForKey = (key?: string) => `${MINIO_BASE_URL}/${key}`;
 export const isUrlFromMinio = (url?: string) =>
   MINIO_BASE_URL && url?.startsWith(MINIO_BASE_URL);
 
-export const minioPutObjectCommandForKey = (Key: string) =>
-  new PutObjectCommand({ Bucket: MINIO_BUCKET, Key });
-
 export const minioPut = async (
   file: Buffer,
   fileName: string,
@@ -65,7 +64,8 @@ export const minioCopy = async (
     : fileNameDestination;
   return minioClient().send(new CopyObjectCommand({
     Bucket: MINIO_BUCKET,
-    CopySource: fileNameSource,
+    // Bucket behavior seems to differ from R2 + S3
+    CopySource: `${MINIO_BUCKET}/${fileNameSource}`,
     Key,
   }))
     .then(() => urlForKey(Key));
@@ -82,7 +82,7 @@ export const minioList = async (
       url: urlForKey(Key),
       fileName: Key ?? '',
       uploadedAt: LastModified,
-      size: Size ? formatBytesToMB(Size) : undefined,
+      size: Size ? formatBytes(Size) : undefined,
     })) ?? []);
 
 export const minioDelete = async (Key: string): Promise<void> => {
@@ -91,4 +91,16 @@ export const minioDelete = async (Key: string): Promise<void> => {
     Key,
   });
   await minioClient().send(deleteObjectCommand);
+};
+
+export const minioGetSignedUrl = (
+  Key: string,
+  method: 'GET' | 'PUT',
+  expiresIn: number,
+) => {
+  const client = minioClient();
+  const command = method === 'GET'
+    ? new GetObjectCommand({ Bucket: MINIO_BUCKET, Key })
+    : new PutObjectCommand({ Bucket: MINIO_BUCKET, Key, ACL: 'public-read' });
+  return getSignedUrl(client, command, { expiresIn });
 };

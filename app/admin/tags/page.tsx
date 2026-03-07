@@ -1,16 +1,16 @@
-import AdminTagTable from '@/admin/AdminTagTable';
+import AdminTagsTable from '@/admin/AdminTagsTable';
 import AppGrid from '@/components/AppGrid';
-import { getUniqueTags } from '@/photo/db/query';
+import { getUniqueTags } from '@/photo/query';
 
 export default async function AdminTagsPage() {
-  const tags = await getUniqueTags().catch(() => []);
+  const tags = await getUniqueTags(true).catch(() => []);
 
   return (
     <AppGrid
       contentMain={
         <div className="space-y-6">
           <div className="space-y-4">
-            <AdminTagTable {...{ tags }} />
+            <AdminTagsTable {...{ tags }} />
           </div>
         </div>}
     />

@@ -1,5 +1,5 @@
 import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
-import { getUniqueFilms } from '@/photo/db/query';
+import { getUniqueFilms } from '@/photo/query';
 import { generateMetaForFilm } from '@/film';
 import FilmOverview from '@/film/FilmOverview';
 import { getPhotosFilmDataCached } from '@/film/data';
@@ -70,7 +70,7 @@ export default async function FilmPage({
   const [
     photos,
     { count, dateRange },
-  ] =  await getPhotosFilmDataCachedCached(film);
+  ] = await getPhotosFilmDataCachedCached(film);
 
   if (photos.length === 0) { redirect(PATH_ROOT); } 
 

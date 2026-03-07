@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import {
@@ -9,6 +10,7 @@ import {
   useState,
 } from 'react';
 import {
+  FIELDS_TO_NOT_TOAST,
   FIELDS_WITH_JSON,
   FORM_METADATA_ENTRIES_BY_SECTION,
   FORM_SECTIONS,
@@ -25,7 +27,11 @@ import { createPhotoAction, updatePhotoAction } from '../actions';
 import SubmitButtonWithStatus from '@/components/SubmitButtonWithStatus';
 import Link from 'next/link';
 import { clsx } from 'clsx/lite';
-import { PATH_ADMIN_PHOTOS, PATH_ADMIN_UPLOADS } from '@/app/path';
+import {
+  PARAM_REDIRECT,
+  PATH_ADMIN_PHOTOS,
+  PATH_ADMIN_UPLOADS,
+} from '@/app/path';
 import { toastSuccess, toastWarning } from '@/toast';
 import { getDimensionsFromSize } from '@/utility/size';
 import ImageWithFallback from '@/components/image/ImageWithFallback';
@@ -36,7 +42,6 @@ import Spinner from '@/components/Spinner';
 import usePreventNavigation from '@/utility/usePreventNavigation';
 import { useAppState } from '@/app/AppState';
 import UpdateBlurDataButton from '../UpdateBlurDataButton';
-import { getNextImageUrlForManipulation } from '@/platforms/next-image';
 import { BLUR_ENABLED, IS_PREVIEW } from '@/app/config';
 import ErrorNote from '@/components/ErrorNote';
 import { convertRecipesForForm, Recipes } from '@/recipe';
@@ -56,14 +61,28 @@ import { capitalize } from '@/utility/string';
 import AnchorSections from '@/components/AnchorSections';
 import useIsVisible from '@/utility/useIsVisible';
 import useHash from '@/utility/useHash';
+import { getOptimizedPhotoUrlForManipulation } from '../storage';
+import {
+  getFileNamePartsFromStorageUrl,
+  StorageListResponse,
+} from '@/platforms/storage';
+import SmallDisclosure from '@/components/SmallDisclosure';
+import { TbPhoto } from 'react-icons/tb';
+import { Albums } from '@/album';
+import FieldsetAlbum from '@/album/FieldsetAlbum';
+import Form from 'next/form';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const THUMBNAIL_SIZE = 300;
 
 export default function PhotoForm({
   type = 'create',
   initialPhotoForm,
+  photoStorageUrls = [],
   updatedExifData,
   updatedBlurData,
+  photoAlbumTitles = [],
+  albums,
   uniqueTags,
   uniqueRecipes,
   uniqueFilms,
@@ -75,22 +94,40 @@ export default function PhotoForm({
 }: {
   type?: 'create' | 'edit'
   initialPhotoForm: Partial<PhotoFormData>
+  photoStorageUrls?: StorageListResponse
   updatedExifData?: Partial<PhotoFormData>
   updatedBlurData?: string
-  uniqueTags?: Tags
-  uniqueRecipes?: Recipes
-  uniqueFilms?: Films
+  photoAlbumTitles?: string[]
+  albums: Albums
+  uniqueTags: Tags
+  uniqueRecipes: Recipes
+  uniqueFilms: Films
   aiContent?: AiContent
   shouldStripGpsData?: boolean
   onTitleChange?: (updatedTitle: string) => void
   onFormDataChange?: (formData: Partial<PhotoFormData>) => void,
   onFormStatusChange?: (pending: boolean) => void
 }) {
+  const router = useRouter();
+
+  const redirectParam = useSearchParams().get(PARAM_REDIRECT);
+
   const [formData, setFormData] =
     useState<Partial<PhotoFormData>>(initialPhotoForm);
   const [formErrors, setFormErrors] =
     useState(getFormErrors(initialPhotoForm));
   const [formActionErrorMessage, setFormActionErrorMessage] = useState('');
+
+  const [detectedFilm, setDetectedFilm] =
+    useState(initialPhotoForm.film);
+
+  const [albumTitles, setAlbumTitles] = useState(photoAlbumTitles
+    .sort((a, b) => a.localeCompare(b))
+    .join(','));
+
+  const areAlbumTitlesModified = albumTitles !== photoAlbumTitles
+    .sort((a, b) => a.localeCompare(b))
+    .join(',');
 
   const { hash } = useHash();
 
@@ -101,7 +138,7 @@ export default function PhotoForm({
   const changedFormKeys = useMemo(() =>
     getChangedFormFields(initialPhotoForm, formData),
   [initialPhotoForm, formData]);
-  const formHasChanged = changedFormKeys.length > 0;
+  const formHasChanged = changedFormKeys.length > 0 || areAlbumTitlesModified;
   const onlyChangedFieldIsBlurData =
     changedFormKeys.length === 1 &&
     changedFormKeys[0] === 'blurData';
@@ -144,8 +181,14 @@ export default function PhotoForm({
         };
       });
 
-      if (changedKeys.length > 0) {
-        const fields = convertFormKeysToLabels(changedKeys);
+      if (updatedExifData?.film) {
+        setDetectedFilm(updatedExifData.film);
+      }
+
+      const keysToToast = changedKeys.filter(key =>
+        !FIELDS_TO_NOT_TOAST.includes(key));
+      if (keysToToast.length > 0) {
+        const fields = convertFormKeysToLabels(keysToToast);
         toastSuccess(`Updated EXIF fields: ${fields.join(', ')}`, 8000);
       } else {
         toastWarning('No new EXIF data found');
@@ -245,7 +288,7 @@ export default function PhotoForm({
         case 'blurData':
           return shouldDebugImageFallbacks && type === 'edit' && formData.url
             ? <UpdateBlurDataButton
-              photoUrl={getNextImageUrlForManipulation(
+              photoUrl={getOptimizedPhotoUrlForManipulation(
                 formData.url,
                 IS_PREVIEW,
               )}
@@ -254,6 +297,46 @@ export default function PhotoForm({
             />
             : null;
       }
+    }
+  };
+
+  const footerForField = (key: keyof PhotoFormData) => {
+    switch (key) {
+      case 'url':
+        return type === 'edit' && photoStorageUrls.length === 0
+          ? <span className="text-error">
+            No storage found for photo
+          </span>
+          : photoStorageUrls.length > 1
+            ? <SmallDisclosure label="Optimized file set">
+              <div className="space-y-1">
+                {photoStorageUrls.map(({ url, size }) => {
+                  const {
+                    fileName,
+                    fileModifier,
+                  } = getFileNamePartsFromStorageUrl(url);
+                  return <div
+                    key={url}
+                    className="flex items-center gap-2"
+                  >
+                    <TbPhoto className="translate-y-[1px] text-medium" />
+                    <Link
+                      href={url}
+                      target="_blank"
+                    >
+                      {fileName}
+                    </Link>
+                    <span className="text-dim">
+                      {size}
+                      {/* Show dimensions for original file when available */}
+                      {!fileModifier && formData.width && formData.height &&
+                        ` @ ${formData.width}×${formData.height}`}
+                    </span>
+                  </div>;
+                })}
+              </div>
+            </SmallDisclosure>
+            : null;
     }
   };
 
@@ -284,13 +367,18 @@ export default function PhotoForm({
         ? 'true'
         : 'false',
     }));
-  }, []);
+  }, [setFormData]);
 
   const formContent = useMemo(() =>
     FORM_METADATA_ENTRIES_BY_SECTION(
       convertTagsForForm(uniqueTags, appText),
       convertRecipesForForm(uniqueRecipes),
-      convertFilmsForForm(uniqueFilms, isMakeFujifilm(formData.make)),
+      convertFilmsForForm(
+        uniqueFilms,
+        isMakeFujifilm(formData.make),
+        detectedFilm,
+        formData.make,
+      ),
       aiContent !== undefined,
       shouldStripGpsData,
     ), [
@@ -299,6 +387,7 @@ export default function PhotoForm({
     uniqueRecipes,
     uniqueFilms,
     formData.make,
+    detectedFilm,
     aiContent,
     shouldStripGpsData,
   ]);
@@ -399,11 +488,14 @@ export default function PhotoForm({
           </a>
         ))}
       </div>
-      <form
+      <Form
         action={data => (type === 'create'
           ? createPhotoAction
           : updatePhotoAction
         )(data)
+          .then(() => {
+            router.push(redirectParam ?? PATH_ADMIN_PHOTOS);
+          })
           .catch(e => {
             if (e.message !== 'NEXT_REDIRECT') {
               setFormActionErrorMessage(e.message);
@@ -433,6 +525,7 @@ export default function PhotoForm({
                   tagOptions,
                   tagOptionsLimit,
                   tagOptionsLimitValidationMessage,
+                  tagOptionsShouldParameterize,
                   readOnly,
                   hideModificationStatus,
                   validate,
@@ -487,6 +580,7 @@ export default function PhotoForm({
                       tagOptions,
                       tagOptionsLimit,
                       tagOptionsLimitValidationMessage,
+                      tagOptionsShouldParameterize,
                       required,
                       readOnly,
                       spellCheck,
@@ -500,6 +594,7 @@ export default function PhotoForm({
                       ),
                       type,
                       accessory: accessoryForField(key),
+                      footer: footerForField(key),
                     };
                     switch (key) {
                       case 'film':
@@ -534,6 +629,25 @@ export default function PhotoForm({
                             colorData={generateColorDataFromString(formData.colorData)}
                           />}
                         />;
+                      case 'tags':
+                        return <FieldsetWithStatus
+                          key={key}
+                          {...fieldProps}
+                          className="relative z-2"
+                        />;
+                      case 'albums':
+                        return <FieldsetAlbum
+                          key={key}
+                          {...fieldProps}
+                          albumOptions={albums}
+                          value={albumTitles}
+                          onChange={value => setAlbumTitles(value)}
+                          isModified={areAlbumTitlesModified}
+                          className={clsx(
+                            fieldProps.className,
+                            'relative z-1',
+                          )}
+                        />;
                       case 'visibility':
                         return <FieldsetVisibility
                           key={key}
@@ -565,6 +679,7 @@ export default function PhotoForm({
         <div className={clsx(
           'flex gap-3 sticky bottom-0',
           'pb-4 md:pb-8 mt-16',
+          'relative z-10',
         )}>
           <Link
             className="button"
@@ -589,7 +704,7 @@ export default function PhotoForm({
             'dark:from-black/90 dark:from-50%',
           )} />
         </div>
-      </form>
+      </Form>
     </div>
   );
 };

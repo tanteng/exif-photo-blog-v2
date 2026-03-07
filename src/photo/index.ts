@@ -19,7 +19,6 @@ import camelcaseKeys from 'camelcase-keys';
 import { isBefore } from 'date-fns';
 import type { Metadata } from 'next';
 import { FujifilmRecipe } from '@/platforms/fujifilm/recipe';
-import { FujifilmSimulation } from '@/platforms/fujifilm/simulation';
 import { PhotoUpdateStatus, generatePhotoUpdateStatus } from './update';
 import { AppTextState } from '@/i18n/state';
 import { PhotoColorData } from './color/client';
@@ -51,6 +50,8 @@ export const MAX_PHOTO_UPLOAD_SIZE_IN_BYTES = 50_000_000;
 
 // Core EXIF data
 export interface PhotoExif {
+  width?: number
+  height?: number
   aspectRatio: number
   make?: string
   model?: string
@@ -64,7 +65,7 @@ export interface PhotoExif {
   exposureCompensation?: number
   latitude?: number
   longitude?: number
-  film?: FujifilmSimulation
+  film?: string
   recipeData?: string
   takenAt?: string
   takenAtNaive?: string
@@ -251,7 +252,7 @@ export const photoLabelForCount = (
     : appText.photo.photoPlural;
   return _capitalize
     ? capitalize(label)
-    : label;
+    : label.toLocaleLowerCase();
 };
 
 export const photoQuantityText = (
@@ -270,7 +271,13 @@ export const deleteConfirmationTextForPhoto = (
 ) =>
   appText.admin.deleteConfirm(titleForPhoto(photo));
 
-export type PhotoDateRange = { start: string, end: string };
+export type PhotoDateRangePostgres = { start: string, end: string };
+export type PhotoDateRangeFormatted = {
+  start: string,
+  end: string,
+  description: string,
+  descriptionWithSpaces: string,
+};
 
 export const descriptionForPhotoSet = (
   photos:Photo[] = [],
@@ -278,10 +285,10 @@ export const descriptionForPhotoSet = (
   descriptor?: string,
   dateBased?: boolean,
   explicitCount?: number,
-  explicitDateRange?: PhotoDateRange,
+  explicitDateRange?: PhotoDateRangePostgres,
 ) =>
   dateBased
-    ? dateRangeForPhotos(photos, explicitDateRange)
+    ? formattedDateRangeForPhotos(photos, explicitDateRange)
       .description
       .toLocaleUpperCase()
     : [
@@ -299,10 +306,10 @@ const sortPhotosByDateNonDestructively = (
     ? b.takenAt.getTime() - a.takenAt.getTime()
     : a.takenAt.getTime() - b.takenAt.getTime());
 
-export const dateRangeForPhotos = (
+export const formattedDateRangeForPhotos = (
   photos: Photo[] = [],
-  explicitDateRange?: PhotoDateRange,
-) => {
+  explicitDateRange?: PhotoDateRangePostgres,
+): PhotoDateRangeFormatted => {
   let start = '';
   let end = '';
   let description = '';
