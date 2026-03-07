@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getPhotosCached } from '@/photo/cache';
 import { CameraProps, formatCameraParams } from '@/camera';
 import {

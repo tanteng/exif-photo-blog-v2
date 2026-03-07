@@ -22,35 +22,48 @@ export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
   safelyGenerateLensStaticParams,
 );
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _: Request,
   context: LensProps,
 ) {
-  const lens = await getLensFromParams(context.params);
+  try {
+    const lens = await getLensFromParams(context.params);
 
-  const [
-    photos,
-    { fontFamily, fonts },
-    headers,
-  ] = await Promise.all([
-    getPhotosCached({
-      limit: MAX_PHOTOS_TO_SHOW_PER_CATEGORY,
-      lens: lens,
-    }),
-    getIBMPlexMono(),
-    getImageResponseCacheControlHeaders(),
-  ]);
-
-  const { width, height } = IMAGE_OG_DIMENSION_SMALL;
-
-  return new ImageResponse(
-    <LensImageResponse {...{
-      lens,
+    const [
       photos,
-      width,
-      height,
-      fontFamily,
-    }}/>,
-    { width, height, fonts, headers },
-  );
+      { fontFamily, fonts },
+      headers,
+    ] = await Promise.all([
+      getPhotosCached({
+        limit: MAX_PHOTOS_TO_SHOW_PER_CATEGORY,
+        lens: lens,
+      })
+        .catch(() => []),
+      getIBMPlexMono(),
+      getImageResponseCacheControlHeaders(),
+    ]);
+
+    const { width, height } = IMAGE_OG_DIMENSION_SMALL;
+
+    // If no photos, return empty response
+    if (!photos || photos.length === 0) {
+      return new Response('No photos', { status: 404 });
+    }
+
+    return new ImageResponse(
+      <LensImageResponse {...{
+        lens,
+        photos,
+        width,
+        height,
+        fontFamily,
+      }}/>,
+      { width, height, fonts, headers },
+    );
+  } catch (error) {
+    console.error('Error generating lens image:', error);
+    return new Response('Image generation failed', { status: 500 });
+  }
 }
