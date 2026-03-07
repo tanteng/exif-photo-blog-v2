@@ -21,8 +21,15 @@ const TENCENT_COS_ENDPOINT = TENCENT_COS_REGION
   ? `cos.${TENCENT_COS_REGION}.myqcloud.com`
   : undefined;
 
+// Bucket name with optional appId (newer COS buckets may not need appId)
+const getBucketName = () => TENCENT_COS_APP_ID 
+  ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}` 
+  : TENCENT_COS_BUCKET;
+
 export const TENCENT_COS_BASE_URL = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
-  ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
+  ? (TENCENT_COS_APP_ID 
+      ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
+      : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
   : undefined;
 
 export const tencentCosClient = () => new S3Client({
@@ -32,7 +39,6 @@ export const tencentCosClient = () => new S3Client({
     accessKeyId: TENCENT_COS_SECRET_ID,
     secretAccessKey: TENCENT_COS_SECRET_KEY,
   },
-  // 腾讯云 COS 需要使用 path-style 或强制使用 virtual hosting style
   forcePathStyle: false,
 });
 
@@ -46,7 +52,7 @@ export const tencentCosPut = async (
   fileName: string,
 ): Promise<string> =>
   tencentCosClient().send(new PutObjectCommand({
-    Bucket: `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`,
+    Bucket: getBucketName(),
     Key: fileName,
     Body: file,
     ACL: 'public-read',
@@ -64,7 +70,7 @@ export const tencentCosCopy = async (
     ? `${name}-${generateStorageId()}.${extension}`
     : fileNameDestination;
   return tencentCosClient().send(new CopyObjectCommand({
-    Bucket: `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`,
+    Bucket: getBucketName(),
     CopySource: fileNameSource,
     Key,
     ACL: 'public-read',
@@ -76,7 +82,7 @@ export const tencentCosList = async (
   Prefix: string,
 ): Promise<StorageListResponse> =>
   tencentCosClient().send(new ListObjectsCommand({
-    Bucket: `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`,
+    Bucket: getBucketName(),
     Prefix,
   }))
     .then((data) => data.Contents?.map(({ Key, LastModified, Size }) => ({
@@ -88,7 +94,7 @@ export const tencentCosList = async (
 
 export const tencentCosDelete = async (Key: string) => {
   tencentCosClient().send(new DeleteObjectCommand({
-    Bucket: `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`,
+    Bucket: getBucketName(),
     Key,
   }));
 };
@@ -100,7 +106,7 @@ export const tencentCosGetSignedUrl = (
 ) => {
   const client = tencentCosClient();
   const command = method === 'GET'
-    ? new GetObjectCommand({ Bucket: `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`, Key })
-    : new PutObjectCommand({ Bucket: `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`, Key, ACL: 'public-read' });
+    ? new GetObjectCommand({ Bucket: getBucketName(), Key })
+    : new PutObjectCommand({ Bucket: getBucketName(), Key, ACL: 'public-read' });
   return getSignedUrl(client, command, { expiresIn });
 };
