@@ -246,11 +246,11 @@ export const CURRENT_STORAGE: StorageType =
 
 export const STATICALLY_OPTIMIZED_PHOTOS =
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_PHOTOS === '1' ||
-  // Legacy environment variable
+  // Disabled by default due to potential build errors with corrupted images
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_PAGES === '1';
 export const STATICALLY_OPTIMIZED_PHOTO_OG_IMAGES =
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_PHOTO_OG_IMAGES === '1' ||
-  // Legacy environment variable
+  // Disabled by default due to potential build errors with corrupted images
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_OG_IMAGES === '1';
 export const STATICALLY_OPTIMIZED_PHOTO_CATEGORIES =
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_PHOTO_CATEGORIES === '1';
