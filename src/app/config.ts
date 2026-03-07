@@ -241,6 +241,14 @@ export const CURRENT_STORAGE: StorageType =
             : 'vercel-blob'
   );
 
+// Debug log for storage configuration
+if (process.env.NODE_ENV === 'development' || process.env.VERCEL) {
+  console.log('[Storage] CURRENT_STORAGE:', CURRENT_STORAGE);
+  console.log('[Storage] HAS_TENCENT_COS_STORAGE_CLIENT:', HAS_TENCENT_COS_STORAGE_CLIENT);
+  console.log('[Storage] HAS_AWS_S3_STORAGE_CLIENT:', HAS_AWS_S3_STORAGE_CLIENT);
+  console.log('[Storage] NEXT_PUBLIC_STORAGE_PREFERENCE:', process.env.NEXT_PUBLIC_STORAGE_PREFERENCE);
+}
+
 // PERFORMANCE
 
 export const STATICALLY_OPTIMIZED_PHOTOS =
