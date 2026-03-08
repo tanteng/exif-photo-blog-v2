@@ -16,6 +16,9 @@ const TENCENT_COS_SECRET_ID = process.env.TENCENT_COS_SECRET_ID ?? '';
 const TENCENT_COS_SECRET_KEY = process.env.TENCENT_COS_SECRET_KEY ?? '';
 const TENCENT_COS_APP_ID = process.env.NEXT_PUBLIC_TENCENT_COS_APP_ID ?? '';
 
+// 自定义域名（可选）
+const TENCENT_COS_CUSTOM_DOMAIN = process.env.NEXT_PUBLIC_TENCENT_COS_DOMAIN ?? '';
+
 // 腾讯云 COS 的 endpoint 格式
 const TENCENT_COS_ENDPOINT = TENCENT_COS_REGION
   ? `cos.${TENCENT_COS_REGION}.myqcloud.com`
@@ -26,11 +29,14 @@ const getBucketName = () => TENCENT_COS_APP_ID
   ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}` 
   : TENCENT_COS_BUCKET;
 
-export const TENCENT_COS_BASE_URL = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
-  ? (TENCENT_COS_APP_ID 
-      ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
-      : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
-  : undefined;
+// 使用自定义域名或默认的 COS 地址
+export const TENCENT_COS_BASE_URL = TENCENT_COS_CUSTOM_DOMAIN
+  ? `https://${TENCENT_COS_CUSTOM_DOMAIN}`
+  : (TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
+      ? (TENCENT_COS_APP_ID 
+          ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
+          : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
+      : undefined);
 
 export const tencentCosClient = () => new S3Client({
   region: TENCENT_COS_REGION,
@@ -99,7 +105,7 @@ export const tencentCosDelete = async (Key: string) => {
   }));
 };
 
-export const tencentCosGetSignedUrl = (
+export const tencentCosGetSignedUrl = async (
   Key: string,
   method: 'GET' | 'PUT',
   expiresIn: number,
@@ -108,5 +114,16 @@ export const tencentCosGetSignedUrl = (
   const command = method === 'GET'
     ? new GetObjectCommand({ Bucket: getBucketName(), Key })
     : new PutObjectCommand({ Bucket: getBucketName(), Key, ACL: 'public-read' });
-  return getSignedUrl(client, command, { expiresIn });
+  
+  const signedUrl = await getSignedUrl(client, command, { expiresIn });
+  
+  // 如果使用自定义域名，替换 URL 中的 endpoint
+  if (TENCENT_COS_CUSTOM_DOMAIN) {
+    return signedUrl.replace(
+      `${getBucketName()}.${TENCENT_COS_ENDPOINT}`,
+      TENCENT_COS_CUSTOM_DOMAIN
+    );
+  }
+  
+  return signedUrl;
 };
