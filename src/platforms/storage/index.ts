@@ -24,7 +24,6 @@ import {
   HAS_TENCENT_COS_STORAGE,
 } from '@/app/config';
 import {
-  TENCENT_COS_BASE_URL,
   getTencentCosUserUrl,
 } from './tencent-cos';
 import { generateNanoid } from '@/utility/nanoid';
@@ -54,6 +53,7 @@ import {
   tencentCosList,
   tencentCosPut,
   isUrlFromTencentCos,
+  getTencentCosUserUrl,
 } from './tencent-cos';
 import { PATH_API_PRESIGNED_URL } from '@/app/path';
 
