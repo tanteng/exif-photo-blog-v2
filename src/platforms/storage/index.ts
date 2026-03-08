@@ -23,9 +23,6 @@ import {
   HAS_MINIO_STORAGE,
   HAS_TENCENT_COS_STORAGE,
 } from '@/app/config';
-import {
-  getTencentCosUserUrl,
-} from './tencent-cos';
 import { generateNanoid } from '@/utility/nanoid';
 import {
   CLOUDFLARE_R2_BASE_URL_PUBLIC,
