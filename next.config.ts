@@ -28,6 +28,9 @@ const MINIO_PORT =
 const MINIO_USE_SSL =
   process.env.NEXT_PUBLIC_MINIO_DISABLE_SSL !== '1';
 
+const HOSTNAME_TENCENT_COS =
+  process.env.NEXT_PUBLIC_TENCENT_COS_DOMAIN;
+
 const generateRemotePattern = (
   hostname: string,
   port?: string,
@@ -63,6 +66,9 @@ if (HOSTNAME_MINIO) {
     MINIO_PORT,
     MINIO_USE_SSL,
   ));
+}
+if (HOSTNAME_TENCENT_COS) {
+  remotePatterns.push(generateRemotePattern(HOSTNAME_TENCENT_COS));
 }
 
 const LOCALE = process.env.NEXT_PUBLIC_LOCALE || 'en-us';
