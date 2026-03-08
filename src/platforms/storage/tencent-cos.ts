@@ -29,15 +29,12 @@ const getBucketName = () => TENCENT_COS_APP_ID
   ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}` 
   : TENCENT_COS_BUCKET;
 
-// 使用自定义域名或默认的 COS 地址
-// 注意：上传可能不支持自定义域名，默认使用 COS 地址
-export const TENCENT_COS_BASE_URL = TENCENT_COS_CUSTOM_DOMAIN
-  ? `https://${TENCENT_COS_CUSTOM_DOMAIN}`
-  : (TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
-      ? (TENCENT_COS_APP_ID 
-          ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
-          : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
-      : undefined);
+// 暂时不使用自定义域名（服务器无法访问）
+export const TENCENT_COS_BASE_URL = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
+  ? (TENCENT_COS_APP_ID 
+      ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
+      : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
+  : undefined;
 
 // 上传时使用默认 COS 地址（自定义域名可能不支持 PUT）
 const getUploadBaseUrl = () => TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
@@ -129,14 +126,6 @@ export const tencentCosGetSignedUrl = async (
   
   const signedUrl = await getSignedUrl(client, command, { expiresIn });
   
-  // GET 请求可以使用自定义域名，PUT 请求使用默认 COS 地址（自定义域名可能不支持上传）
-  if (method === 'GET' && TENCENT_COS_CUSTOM_DOMAIN) {
-    return signedUrl.replace(
-      `${getBucketName()}.${TENCENT_COS_ENDPOINT}`,
-      TENCENT_COS_CUSTOM_DOMAIN
-    );
-  }
-  
-  // PUT 请求返回默认地址
+  // 暂时全部使用默认 COS 地址（服务器无法访问自定义域名）
   return signedUrl;
 };
