@@ -28,6 +28,7 @@ import {
   getJoinsFromOptions,
 } from '../db';
 import { FocalLengths } from '@/focal';
+import { getTencentCosUserUrl } from '@/platforms/storage';
 import { Lenses, createLensKey } from '@/lens';
 import {
   UPDATE_QUERY_LIMIT,
@@ -465,14 +466,24 @@ const _getPhotos = async (
   values.push(...limitAndOffsetValues);
 
   return query(sql.join(' '), values)
-    .then(({ rows, rowCount }) => ({
-      // Only parse results if there's at least one photo
-      photos: shouldParse ? rows.map(parsePhotoFromDb) : rows,
+  .then(({ rows, rowCount }) => {
+    // Transform photo URLs to user-facing URLs (custom domain if configured)
+    const photos = shouldParse 
+      ? rows.map(parsePhotoFromDb).map(photo => ({
+          ...photo,
+          url: getTencentCosUserUrl(photo.url),
+          blurData: photo.blurData,
+        }))
+      : rows;
+    // Only parse results if there's at least one photo
+    return {
+      photos,
       // Prefer explicit count before falling back to row count
       count: rows[0]?.count !== undefined
         ? parseInt(rows[0]?.count ?? '0', 10)
         : rowCount ?? 0,
-    }));
+    };
+  });
 };
 
 export const getPhotos = async (options: PhotoQueryOptions = {}) =>

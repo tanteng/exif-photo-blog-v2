@@ -16,7 +16,7 @@ const TENCENT_COS_SECRET_ID = process.env.TENCENT_COS_SECRET_ID ?? '';
 const TENCENT_COS_SECRET_KEY = process.env.TENCENT_COS_SECRET_KEY ?? '';
 const TENCENT_COS_APP_ID = process.env.NEXT_PUBLIC_TENCENT_COS_APP_ID ?? '';
 
-// 自定义域名（可选）
+// 自定义域名（可选）- 用于用户访问时显示
 const TENCENT_COS_CUSTOM_DOMAIN = process.env.NEXT_PUBLIC_TENCENT_COS_DOMAIN ?? '';
 
 // 腾讯云 COS 的 endpoint 格式
@@ -29,12 +29,30 @@ const getBucketName = () => TENCENT_COS_APP_ID
   ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}` 
   : TENCENT_COS_BUCKET;
 
-// 暂时不使用自定义域名（服务器无法访问）
+// COS 默认地址（服务器使用）
 export const TENCENT_COS_BASE_URL = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
   ? (TENCENT_COS_APP_ID 
       ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
       : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
   : undefined;
+
+// 获取用户访问的 URL（使用自定义域名）
+export const getTencentCosUserUrl = (cosUrl: string): string => {
+  if (!TENCENT_COS_CUSTOM_DOMAIN || !cosUrl) {
+    return cosUrl;
+  }
+  // 将 COS 地址替换为自定义域名
+  const cosBaseUrl = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
+    ? (TENCENT_COS_APP_ID 
+        ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
+        : `${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
+    : '';
+  
+  if (cosUrl.includes(cosBaseUrl)) {
+    return cosUrl.replace(cosBaseUrl, TENCENT_COS_CUSTOM_DOMAIN);
+  }
+  return cosUrl;
+};
 
 // 上传时使用默认 COS 地址（自定义域名可能不支持 PUT）
 const getUploadBaseUrl = () => TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT

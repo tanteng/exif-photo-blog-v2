@@ -23,6 +23,10 @@ import {
   HAS_MINIO_STORAGE,
   HAS_TENCENT_COS_STORAGE,
 } from '@/app/config';
+import {
+  TENCENT_COS_BASE_URL,
+  getTencentCosUserUrl,
+} from './tencent-cos';
 import { generateNanoid } from '@/utility/nanoid';
 import {
   CLOUDFLARE_R2_BASE_URL_PUBLIC,
@@ -115,6 +119,9 @@ export const baseUrlForStorage = (type: StorageType) => {
     case 'tencent-cos': return TENCENT_COS_BASE_URL;
   }
 };
+
+// 获取用户访问的 URL（将 COS 地址转换为自定义域名）
+export { getTencentCosUserUrl };
 
 export const storageTypeFromUrl = (url: string): StorageType => {
   if (isUrlFromCloudflareR2(url)) {
