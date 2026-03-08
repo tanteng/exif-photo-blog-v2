@@ -83,7 +83,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
       </head>
       <body className={clsx(
         // Center on large screens

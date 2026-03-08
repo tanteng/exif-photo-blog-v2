@@ -1,5 +1,4 @@
-@import url("https://fonts.font.im/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap");
-
+/* 使用本地字体，移除外部字体引用 */
 @import 'tailwindcss';
 
 @import './src/css/sonner.css';
