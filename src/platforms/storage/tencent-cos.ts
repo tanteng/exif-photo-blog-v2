@@ -74,8 +74,8 @@ export const tencentCosPut = async (
     Body: file,
     ACL: 'public-read',
   }))
-    // 上传成功返回自定义域名的 URL（如果配置了的话）
-    .then(() => urlForKey(fileName));
+    // 上传成功返回 COS 默认地址（服务器需要用这个 URL 下载图片提取 EXIF）
+    .then(() => uploadUrlForKey(fileName));
 
 export const tencentCosCopy = async (
   fileNameSource: string,
