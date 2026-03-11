@@ -29,11 +29,9 @@ const getBucketName = () => TENCENT_COS_APP_ID
   ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}` 
   : TENCENT_COS_BUCKET;
 
-// COS 默认地址（服务器使用）
+// COS 默认地址（服务器使用）- 使用Virtual Host Style格式
 export const TENCENT_COS_BASE_URL = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
-  ? (TENCENT_COS_APP_ID 
-      ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
-      : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
+  ? `https://${getBucketName()}.${TENCENT_COS_ENDPOINT}`
   : undefined;
 
 // 获取用户访问的 URL（使用自定义域名）
@@ -42,18 +40,12 @@ export const getTencentCosUserUrl = (cosUrl: string): string => {
     return cosUrl;
   }
 
-  // 构建可能的 COS 基础URL格式
-  const bucketWithAppId = TENCENT_COS_APP_ID
-    ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`
-    : TENCENT_COS_BUCKET;
+  // 构建可能的 COS 基础URL格式 - Virtual Host Style
+  const bucketWithAppId = getBucketName();
 
   const cosBaseUrls = [
-    // Subdomain格式: bucket.appId.cos.region.myqcloud.com
+    // Virtual Host格式: bucket-appId.cos.region.myqcloud.com
     `https://${bucketWithAppId}.${TENCENT_COS_ENDPOINT}`,
-    // Path格式: cos.region.myqcloud.com/bucket-appId
-    `https://${TENCENT_COS_ENDPOINT}/${bucketWithAppId}`,
-    // Path格式: cos.region.myqcloud.com/bucket
-    `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`,
   ];
 
   for (const baseUrl of cosBaseUrls) {
@@ -66,11 +58,9 @@ export const getTencentCosUserUrl = (cosUrl: string): string => {
   return cosUrl;
 };
 
-// 上传时使用默认 COS 地址（自定义域名可能不支持 PUT）
+// 上传时使用默认 COS 地址
 const getUploadBaseUrl = () => TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
-  ? (TENCENT_COS_APP_ID 
-      ? `https://${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
-      : `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
+  ? `https://${getBucketName()}.${TENCENT_COS_ENDPOINT}`
   : undefined;
 
 export const tencentCosClient = () => new S3Client({
