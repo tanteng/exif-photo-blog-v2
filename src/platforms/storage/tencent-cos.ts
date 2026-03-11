@@ -73,10 +73,23 @@ export const tencentCosClient = () => new S3Client({
   forcePathStyle: false,
 });
 
-const urlForKey = (key?: string) => `${TENCENT_COS_BASE_URL}/${key}`;
+const urlForKey = (key?: string) => {
+  // 移除key中可能已包含的bucket前缀
+  const bucketName = getBucketName();
+  const cleanKey = key?.startsWith(bucketName + '/')
+    ? key.substring(bucketName.length + 1)
+    : key;
+  return `${TENCENT_COS_BASE_URL}/${cleanKey}`;
+};
 
-// 上传用的 URL（不使用自定义域名）
-const uploadUrlForKey = (key?: string) => `${getUploadBaseUrl()}/${key}`;
+// 上传用的 URL
+const uploadUrlForKey = (key?: string) => {
+  const bucketName = getBucketName();
+  const cleanKey = key?.startsWith(bucketName + '/')
+    ? key.substring(bucketName.length + 1)
+    : key;
+  return `${getUploadBaseUrl()}/${cleanKey}`;
+};
 
 export const isUrlFromTencentCos = (url?: string) =>
   TENCENT_COS_BASE_URL && url?.startsWith(TENCENT_COS_BASE_URL);
