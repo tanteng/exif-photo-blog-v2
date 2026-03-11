@@ -34,31 +34,7 @@ export const TENCENT_COS_BASE_URL = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
   ? `https://${getBucketName()}.${TENCENT_COS_ENDPOINT}`
   : undefined;
 
-// 获取用户访问的 URL（使用自定义域名）
-export const getTencentCosUserUrl = (cosUrl: string): string => {
-  if (!TENCENT_COS_CUSTOM_DOMAIN || !cosUrl) {
-    return cosUrl;
-  }
-
-  // 构建可能的 COS 基础URL格式 - Virtual Host Style
-  const bucketWithAppId = getBucketName();
-
-  const cosBaseUrls = [
-    // Virtual Host格式: bucket-appId.cos.region.myqcloud.com
-    `https://${bucketWithAppId}.${TENCENT_COS_ENDPOINT}`,
-  ];
-
-  for (const baseUrl of cosBaseUrls) {
-    if (cosUrl.includes(baseUrl)) {
-      return cosUrl.replace(baseUrl, TENCENT_COS_CUSTOM_DOMAIN);
-    }
-  }
-
-  // 如果都匹配不到，返回原始URL
-  return cosUrl;
-};
-
-// 上传时使用默认 COS 地址
+// 上传用的URL
 const getUploadBaseUrl = () => TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
   ? `https://${getBucketName()}.${TENCENT_COS_ENDPOINT}`
   : undefined;
@@ -73,23 +49,10 @@ export const tencentCosClient = () => new S3Client({
   forcePathStyle: false,
 });
 
-const urlForKey = (key?: string) => {
-  // 移除key中可能已包含的bucket前缀
-  const bucketName = getBucketName();
-  const cleanKey = key?.startsWith(bucketName + '/')
-    ? key.substring(bucketName.length + 1)
-    : key;
-  return `${TENCENT_COS_BASE_URL}/${cleanKey}`;
-};
+const urlForKey = (key?: string) => `${TENCENT_COS_BASE_URL}/${key}`;
 
 // 上传用的 URL
-const uploadUrlForKey = (key?: string) => {
-  const bucketName = getBucketName();
-  const cleanKey = key?.startsWith(bucketName + '/')
-    ? key.substring(bucketName.length + 1)
-    : key;
-  return `${getUploadBaseUrl()}/${cleanKey}`;
-};
+const uploadUrlForKey = (key?: string) => `${getUploadBaseUrl()}/${key}`;
 
 export const isUrlFromTencentCos = (url?: string) =>
   TENCENT_COS_BASE_URL && url?.startsWith(TENCENT_COS_BASE_URL);
