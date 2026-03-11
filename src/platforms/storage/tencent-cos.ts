@@ -80,9 +80,13 @@ export const tencentCosCopy = async (
   const Key = addRandomSuffix
     ? `${name}-${generateStorageId()}.${extension}`
     : fileNameDestination;
+  
+  // CopySource 需要完整URL格式: bucket-appId.cos.region.myqcloud.com/key
+  const copySource = `${getBucketName()}.${TENCENT_COS_ENDPOINT}/${fileNameSource}`;
+  
   return tencentCosClient().send(new CopyObjectCommand({
     Bucket: getBucketName(),
-    CopySource: fileNameSource,
+    CopySource: copySource,
     Key,
     ACL: 'public-read',
   }))
