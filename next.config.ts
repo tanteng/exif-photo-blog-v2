@@ -31,6 +31,11 @@ const MINIO_USE_SSL =
 const HOSTNAME_TENCENT_COS =
   process.env.NEXT_PUBLIC_TENCENT_COS_DOMAIN;
 
+const HOSTNAME_TENCENT_COS_DIRECT = 
+  process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET && process.env.NEXT_PUBLIC_TENCENT_COS_REGION
+    ? `${process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET}${process.env.NEXT_PUBLIC_TENCENT_COS_APP_ID ? `-${process.env.NEXT_PUBLIC_TENCENT_COS_APP_ID}` : ''}.cos.${process.env.NEXT_PUBLIC_TENCENT_COS_REGION}.myqcloud.com`
+    : undefined;
+
 const generateRemotePattern = (
   hostname: string,
   port?: string,
@@ -69,6 +74,9 @@ if (HOSTNAME_MINIO) {
 }
 if (HOSTNAME_TENCENT_COS) {
   remotePatterns.push(generateRemotePattern(HOSTNAME_TENCENT_COS));
+}
+if (HOSTNAME_TENCENT_COS_DIRECT) {
+  remotePatterns.push(generateRemotePattern(HOSTNAME_TENCENT_COS_DIRECT));
 }
 
 // 添加 assets CDN 域名
