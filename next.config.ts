@@ -71,6 +71,13 @@ if (HOSTNAME_TENCENT_COS) {
   remotePatterns.push(generateRemotePattern(HOSTNAME_TENCENT_COS));
 }
 
+// 添加 assets CDN 域名
+remotePatterns.push({
+  protocol: 'https',
+  hostname: 'assets.tanteng.space',
+  pathname: '/**',
+});
+
 const LOCALE = process.env.NEXT_PUBLIC_LOCALE || 'en-us';
 const LOCALE_ALIAS = './date-fns-locale-alias';
 const LOCALE_DYNAMIC = `i18n/locales/${LOCALE}`;
