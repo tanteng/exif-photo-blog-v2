@@ -41,16 +41,28 @@ export const getTencentCosUserUrl = (cosUrl: string): string => {
   if (!TENCENT_COS_CUSTOM_DOMAIN || !cosUrl) {
     return cosUrl;
   }
-  // 将 COS 地址替换为自定义域名
-  const cosBaseUrl = TENCENT_COS_BUCKET && TENCENT_COS_ENDPOINT
-    ? (TENCENT_COS_APP_ID 
-        ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}.${TENCENT_COS_ENDPOINT}`
-        : `${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`)
-    : '';
-  
-  if (cosUrl.includes(cosBaseUrl)) {
-    return cosUrl.replace(cosBaseUrl, TENCENT_COS_CUSTOM_DOMAIN);
+
+  // 构建可能的 COS 基础URL格式
+  const bucketWithAppId = TENCENT_COS_APP_ID
+    ? `${TENCENT_COS_BUCKET}-${TENCENT_COS_APP_ID}`
+    : TENCENT_COS_BUCKET;
+
+  const cosBaseUrls = [
+    // Subdomain格式: bucket.appId.cos.region.myqcloud.com
+    `https://${bucketWithAppId}.${TENCENT_COS_ENDPOINT}`,
+    // Path格式: cos.region.myqcloud.com/bucket-appId
+    `https://${TENCENT_COS_ENDPOINT}/${bucketWithAppId}`,
+    // Path格式: cos.region.myqcloud.com/bucket
+    `https://${TENCENT_COS_ENDPOINT}/${TENCENT_COS_BUCKET}`,
+  ];
+
+  for (const baseUrl of cosBaseUrls) {
+    if (cosUrl.includes(baseUrl)) {
+      return cosUrl.replace(baseUrl, TENCENT_COS_CUSTOM_DOMAIN);
+    }
   }
+
+  // 如果都匹配不到，返回原始URL
   return cosUrl;
 };
 
