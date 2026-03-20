@@ -10,6 +10,11 @@ const pool = new Pool({
     ),
   },
   ...POSTGRES_SSL_ENABLED && { ssl: true },
+  // Increase timeouts for cross-region database connections (e.g., US East ↔ China)
+  connectionTimeoutMillis: 10000,   // 10s to establish connection
+  idleTimeoutMillis: 30000,         // 30s before idle client is closed
+  statement_timeout: 30000,         // 30s max per query
+  max: 20,                          // increase pool size for concurrent build queries
 });
 
 export type Primitive = string | number | boolean | undefined | null;

@@ -85,6 +85,9 @@ const IMAGE_QUALITY =
     : 75;
 
 const nextConfig: NextConfig = {
+  // Increase timeout for static page generation during build
+  // Default is 60s, but cross-region DB queries (US East ↔ China) need more time
+  staticPageGenerationTimeout: 180,
   images: {
     imageSizes: [200],
     qualities: [75, IMAGE_QUALITY],
