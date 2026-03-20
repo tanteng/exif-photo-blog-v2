@@ -147,9 +147,21 @@ const getAlbumSlug = (albumOrAlbumSlug: AlbumOrAlbumSlug) =>
     ? albumOrAlbumSlug
     : albumOrAlbumSlug.slug;
 
-export const pathForAdminUploadUrl = (url: string, title?: string) =>
-  // eslint-disable-next-line max-len
-  `${PATH_ADMIN_UPLOADS}/${encodeURIComponent(url)}${title ? `?${PARAM_UPLOAD_TITLE}=${encodeURIComponent(title)}` : ''}`;
+export const pathForAdminUploadUrl = (url: string, title?: string) => {
+  // Only use the file name (last segment) as the route parameter
+  // to avoid Next.js decoding %2F in full URLs which causes 404.
+  // Strip extension to prevent Next.js treating .jpeg/.jpg as static files
+  // which causes browsers to download instead of rendering the page.
+  const fileName = url.split('/').pop() ?? url;
+  const dotIndex = fileName.lastIndexOf('.');
+  const baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+  const ext = dotIndex > 0 ? fileName.substring(dotIndex + 1) : '';
+  const params = new URLSearchParams();
+  if (ext) params.set('ext', ext);
+  if (title) params.set(PARAM_UPLOAD_TITLE, title);
+  const qs = params.toString();
+  return `${PATH_ADMIN_UPLOADS}/${baseName}${qs ? `?${qs}` : ''}`;
+};
 
 export const pathForAdminPhotoEdit = (photo: PhotoOrPhotoId) =>
   `${PATH_ADMIN_PHOTOS}/${getPhotoId(photo)}/${EDIT}`;

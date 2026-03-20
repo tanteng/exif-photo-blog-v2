@@ -21,6 +21,7 @@ import {
   HAS_VERCEL_BLOB_STORAGE,
   HAS_CLOUDFLARE_R2_STORAGE,
   HAS_MINIO_STORAGE,
+  HAS_TENCENT_COS_STORAGE,
 } from '@/app/config';
 import { generateNanoid } from '@/utility/nanoid';
 import {
@@ -41,6 +42,15 @@ import {
   isUrlFromMinio,
   minioGetSignedUrl,
 } from './minio';
+import {
+  TENCENT_COS_BASE_URL,
+  tencentCosCopy,
+  tencentCosDelete,
+  tencentCosGetSignedUrl,
+  tencentCosList,
+  tencentCosPut,
+  isUrlFromTencentCos,
+} from './tencent-cos';
 import { PATH_API_PRESIGNED_URL } from '@/app/path';
 
 export type StorageListItem = {
@@ -56,7 +66,8 @@ export type StorageType =
   'vercel-blob' |
   'aws-s3' |
   'cloudflare-r2' |
-  'minio';
+  'minio' |
+  'tencent-cos';
 
 export const generateStorageId = () => generateNanoid(16);
 
@@ -91,6 +102,7 @@ export const labelForStorage = (type: StorageType): string => {
     case 'cloudflare-r2': return 'Cloudflare R2';
     case 'aws-s3': return 'AWS S3';
     case 'minio': return 'MinIO';
+    case 'tencent-cos': return 'Tencent COS';
   }
 };
 
@@ -100,6 +112,7 @@ export const baseUrlForStorage = (type: StorageType) => {
     case 'cloudflare-r2': return CLOUDFLARE_R2_BASE_URL_PUBLIC;
     case 'aws-s3': return AWS_S3_BASE_URL;
     case 'minio': return MINIO_BASE_URL;
+    case 'tencent-cos': return TENCENT_COS_BASE_URL;
   }
 };
 
@@ -110,6 +123,8 @@ export const storageTypeFromUrl = (url: string): StorageType => {
     return 'aws-s3';
   } else if (isUrlFromMinio(url)) {
     return 'minio';
+  } else if (isUrlFromTencentCos(url)) {
+    return 'tencent-cos';
   } else {
     return 'vercel-blob';
   }
@@ -139,7 +154,8 @@ export const uploadFileFromClient = async (
   return (
     CURRENT_STORAGE === 'cloudflare-r2' ||
     CURRENT_STORAGE === 'aws-s3' ||
-    CURRENT_STORAGE === 'minio'
+    CURRENT_STORAGE === 'minio' ||
+    CURRENT_STORAGE === 'tencent-cos'
   )
     ? uploadFromClientViaPresignedUrl(file, fileName)
     : vercelBlobUploadFromClient(file, fileName);
@@ -158,6 +174,8 @@ export const putFile = (
       return awsS3Put(file, fileName);
     case 'minio':
       return minioPut(file, fileName);
+    case 'tencent-cos':
+      return tencentCosPut(file, fileName);
   }
 };
 
@@ -191,6 +209,12 @@ export const copyFile = (
         destinationFileName,
         false,
       );
+    case 'tencent-cos':
+      return tencentCosCopy(
+        fileName,
+        destinationFileName,
+        false,
+      );
   }
 };
 
@@ -205,6 +229,8 @@ export const deleteFile = (url: string) => {
       return awsS3Delete(fileName);
     case 'minio':
       return minioDelete(fileName);
+    case 'tencent-cos':
+      return tencentCosDelete(fileName);
   }
 };
 
@@ -242,6 +268,10 @@ export const getStorageUrlsForPrefix = async (prefix = '') => {
     urls.push(...await minioList(prefix)
       .catch(() => []));
   }
+  if (HAS_TENCENT_COS_STORAGE) {
+    urls.push(...await tencentCosList(prefix)
+      .catch(() => []));
+  }
 
   return urls
     .sort((a, b) => {
@@ -262,6 +292,8 @@ export const getSignedUrlForKey = async (
       return cloudflareR2GetSignedUrl(key, method, expiresIn);
     case 'minio':
       return minioGetSignedUrl(key, method, expiresIn);
+    case 'tencent-cos':
+      return tencentCosGetSignedUrl(key, method, expiresIn);
     default:
       return awsS3GetSignedUrl(key, method, expiresIn);
   }
@@ -281,6 +313,8 @@ export const getSignedUrlForUrl = (
       return minioGetSignedUrl(fileName, method, expiresIn);
     case 'aws-s3':
       return awsS3GetSignedUrl(fileName, method, expiresIn);
+    case 'tencent-cos':
+      return tencentCosGetSignedUrl(fileName, method, expiresIn);
     default:
       return url;
   }

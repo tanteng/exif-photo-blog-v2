@@ -208,24 +208,37 @@ export const HAS_MINIO_STORAGE =
   Boolean(process.env.MINIO_ACCESS_KEY) &&
   Boolean(process.env.MINIO_SECRET_ACCESS_KEY);
 
+// STORAGE: Tencent COS
+// Includes separate check for client-side usage, i.e., url construction
+export const HAS_TENCENT_COS_STORAGE_CLIENT =
+  Boolean(process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET) &&
+  Boolean(process.env.NEXT_PUBLIC_TENCENT_COS_REGION);
+export const HAS_TENCENT_COS_STORAGE =
+  HAS_TENCENT_COS_STORAGE_CLIENT &&
+  Boolean(process.env.TENCENT_COS_SECRET_ID) &&
+  Boolean(process.env.TENCENT_COS_SECRET_KEY);
+
 export const HAS_MULTIPLE_STORAGE_PROVIDERS = [
   HAS_VERCEL_BLOB_STORAGE,
   HAS_CLOUDFLARE_R2_STORAGE,
   HAS_AWS_S3_STORAGE,
   HAS_MINIO_STORAGE,
+  HAS_TENCENT_COS_STORAGE,
 ].filter(Boolean).length > 1;
 
 // Storage preference requires client-available keys
 // so it can be reached in the browser when uploading
 export const CURRENT_STORAGE: StorageType =
   (process.env.NEXT_PUBLIC_STORAGE_PREFERENCE as StorageType | undefined) || (
-    HAS_MINIO_STORAGE_CLIENT
-      ? 'minio'
-      : HAS_CLOUDFLARE_R2_STORAGE_CLIENT
-        ? 'cloudflare-r2'
-        : HAS_AWS_S3_STORAGE_CLIENT
-          ? 'aws-s3'
-          : 'vercel-blob'
+    HAS_TENCENT_COS_STORAGE_CLIENT
+      ? 'tencent-cos'
+      : HAS_MINIO_STORAGE_CLIENT
+        ? 'minio'
+        : HAS_CLOUDFLARE_R2_STORAGE_CLIENT
+          ? 'cloudflare-r2'
+          : HAS_AWS_S3_STORAGE_CLIENT
+            ? 'aws-s3'
+            : 'vercel-blob'
   );
 
 // PERFORMANCE
@@ -420,11 +433,13 @@ export const APP_CONFIGURATION = {
   hasCloudflareR2Storage: HAS_CLOUDFLARE_R2_STORAGE,
   hasAwsS3Storage: HAS_AWS_S3_STORAGE,
   hasMinioStorage: HAS_MINIO_STORAGE,
+  hasTencentCosStorage: HAS_TENCENT_COS_STORAGE,
   hasStorageProvider: (
     HAS_VERCEL_BLOB_STORAGE ||
     HAS_CLOUDFLARE_R2_STORAGE ||
     HAS_AWS_S3_STORAGE ||
-    HAS_MINIO_STORAGE
+    HAS_MINIO_STORAGE ||
+    HAS_TENCENT_COS_STORAGE
   ),
   hasMultipleStorageProviders: HAS_MULTIPLE_STORAGE_PROVIDERS,
   currentStorage: CURRENT_STORAGE,

@@ -21,6 +21,13 @@ const HOSTNAME_AWS_S3 =
     ? `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_S3_REGION}.amazonaws.com`
     : undefined;
 
+const HOSTNAME_TENCENT_COS =
+  process.env.NEXT_PUBLIC_TENCENT_COS_CUSTOM_DOMAIN
+  || (process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET &&
+      process.env.NEXT_PUBLIC_TENCENT_COS_REGION
+    ? `${process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET}.cos.${process.env.NEXT_PUBLIC_TENCENT_COS_REGION}.myqcloud.com`
+    : undefined);
+
 const HOSTNAME_MINIO =
   process.env.NEXT_PUBLIC_MINIO_DOMAIN;
 const MINIO_PORT =
@@ -64,6 +71,9 @@ if (HOSTNAME_MINIO) {
     MINIO_USE_SSL,
   ));
 }
+if (HOSTNAME_TENCENT_COS) {
+  remotePatterns.push(generateRemotePattern(HOSTNAME_TENCENT_COS));
+}
 
 const LOCALE = process.env.NEXT_PUBLIC_LOCALE || 'en-us';
 const LOCALE_ALIAS = './date-fns-locale-alias';
@@ -80,6 +90,7 @@ const nextConfig: NextConfig = {
     qualities: [75, IMAGE_QUALITY],
     remotePatterns,
     minimumCacheTTL: 31536000,
+    contentDispositionType: 'inline',
   },
   serverExternalPackages: ['exifr'],
   turbopack: {

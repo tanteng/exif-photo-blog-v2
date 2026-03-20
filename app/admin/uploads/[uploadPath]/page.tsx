@@ -10,12 +10,14 @@ import UploadPageClient from '@/photo/UploadPageClient';
 import {
   AI_CONTENT_GENERATION_ENABLED,
   BLUR_ENABLED,
+  CURRENT_STORAGE,
 } from '@/app/config';
 import ErrorNote from '@/components/ErrorNote';
 import { getRecipeTitleForData } from '@/photo/query';
 import { getAlbumsWithMeta } from '@/album/query';
 import { addAiTextToFormData } from '@/photo/ai/server';
 import AppGrid from '@/components/AppGrid';
+import { baseUrlForStorage } from '@/platforms/storage';
 
 export const maxDuration = 60;
 
@@ -25,8 +27,21 @@ interface Params {
 }
 
 export default async function UploadPage({ params, searchParams }: Params) {
-  const uploadPath = (await params).uploadPath;
-  const title = (await searchParams)[PARAM_UPLOAD_TITLE];
+  const uploadPathRaw = (await params).uploadPath;
+  const resolvedSearchParams = await searchParams;
+  const title = resolvedSearchParams[PARAM_UPLOAD_TITLE];
+  const ext = resolvedSearchParams['ext'];
+
+  // uploadPath may be just a file base name (e.g. "upload-xxx")
+  // or a full encoded URL for backward compatibility.
+  // If it's just a file name, reconstruct the full storage URL.
+  const decodedPath = decodeURIComponent(uploadPathRaw);
+  const fileNameWithExt = ext && typeof ext === 'string'
+    ? `${decodedPath}.${ext}`
+    : decodedPath;
+  const uploadPath = fileNameWithExt.startsWith('http')
+    ? fileNameWithExt
+    : `${baseUrlForStorage(CURRENT_STORAGE)}/${fileNameWithExt}`;
 
   const [
     albums,
