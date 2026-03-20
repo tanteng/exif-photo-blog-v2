@@ -11,11 +11,23 @@ const pool = new Pool({
   },
   ...POSTGRES_SSL_ENABLED && { ssl: true },
   // Increase timeouts for cross-region database connections (e.g., US East ↔ China)
-  connectionTimeoutMillis: 10000,   // 10s to establish connection
+  connectionTimeoutMillis: 30000,   // 30s to establish connection
   idleTimeoutMillis: 30000,         // 30s before idle client is closed
-  statement_timeout: 30000,         // 30s max per query
   max: 20,                          // increase pool size for concurrent build queries
 });
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const isRetryableError = (error: any): boolean => {
+  const code = error?.code || '';
+  return code === 'ETIMEDOUT' ||
+    code === 'ECONNRESET' ||
+    code === 'ECONNREFUSED' ||
+    code === 'CONNECTION_ENDED';
+};
 
 export type Primitive = string | number | boolean | undefined | null;
 
@@ -23,16 +35,25 @@ export const query = async <T extends QueryResultRow = any>(
   queryString: string,
   values: Primitive[] = [],
 ) => {
-  const client = await pool.connect();
-  let response: QueryResult<T>;
-  try {
-    response = await client.query<T>(queryString, values);
-  } catch (error) {
-    throw error;
-  } finally {
-    client.release();
+  let lastError: any;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const client = await pool.connect();
+    try {
+      const response = await client.query<T>(queryString, values);
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < MAX_RETRIES && isRetryableError(error)) {
+        console.warn(
+          `DB query failed (attempt ${attempt}/${MAX_RETRIES}): ${(error as any)?.code}. Retrying in ${RETRY_DELAY_MS}ms...`,
+        );
+        await sleep(RETRY_DELAY_MS);
+      }
+    } finally {
+      client.release();
+    }
   }
-  return response;
+  throw lastError;
 };
 
 export const sql = <T extends QueryResultRow>(
