@@ -10,14 +10,13 @@ const pool = new Pool({
     ),
   },
   ...POSTGRES_SSL_ENABLED && { ssl: true },
-  // Increase timeouts for cross-region database connections (e.g., US East ↔ China)
-  connectionTimeoutMillis: 30000,   // 30s to establish connection
-  idleTimeoutMillis: 30000,         // 30s before idle client is closed
-  max: 20,                          // increase pool size for concurrent build queries
+  connectionTimeoutMillis: 5000,    // 5s to establish connection
+  idleTimeoutMillis: 10000,         // 10s before idle client is closed
+  max: 10,                          // default pool size
 });
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 500;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -1,3 +1,4 @@
+import localFont from 'next/font/local';
 import { clsx } from 'clsx/lite';
 import {
   BASE_URL,
@@ -12,6 +13,17 @@ import {
   VERCEL_GIT_COMMIT_SHA_SHORT,
   DEBUG_OUTPUTS_ENABLED,
 } from '@/app/config';
+
+const ibmPlexMono = localFont({
+  src: [
+    { path: '../public/fonts/IBMPlexMono-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/IBMPlexMono-Medium.ttf', weight: '500', style: 'normal' },
+    { path: '../public/fonts/IBMPlexMono-Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-ibm-plex-mono',
+  display: 'swap',
+});
+
 import AppStateProvider from '@/app/AppStateProvider';
 import ToasterWithThemes from '@/toast/ToasterWithThemes';
 import PhotoEscapeHandler from '@/photo/PhotoEscapeHandler';
@@ -93,12 +105,11 @@ export default function RootLayout({
   return (
     <html
       lang={HTML_LANG}
+      className={ibmPlexMono.variable}
       // Suppress hydration errors due to next-themes behavior
       suppressHydrationWarning
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.cn" />
-      </head>
+      <head />
       <body className={clsx(
         // Center on large screens
         '3xl:flex flex-col items-center',
