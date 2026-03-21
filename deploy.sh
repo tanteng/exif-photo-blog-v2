@@ -32,6 +32,13 @@ pm2 restart photo-blog
 # 等待服务就绪
 sleep 3
 
+echo "🌐 Purging EdgeOne page cache..."
+if [ -f "/opt/ops/purge-edgeone-cache.sh" ]; then
+  bash "/opt/ops/purge-edgeone-cache.sh" || echo "⚠️ EdgeOne cache purge failed (non-fatal)"
+else
+  echo "⚠️ purge-edgeone-cache.sh not found, skipping cache purge"
+fi
+
 echo "🧹 Cleaning up..."
 rm -rf .next-old
 rm -rf $BUILD_DIR
