@@ -33,7 +33,7 @@ export const getNextImageUrlForRequest = ({
   // For COS images, use Tencent CI for image processing
   // This avoids hitting /_next/image and consuming server CPU
   if (COS_CUSTOM_DOMAIN && imageUrl.includes(COS_CUSTOM_DOMAIN)) {
-    return `${imageUrl}?imageMogr2/thumbnail/${size}x/format/webp/quality/${quality}/interlace/1`;
+    return `${imageUrl}?imageMogr2/auto-orient/thumbnail/${size}x/format/webp/quality/${quality}/interlace/1`;
   }
 
   // Fall back to Next.js image optimization for non-COS images
