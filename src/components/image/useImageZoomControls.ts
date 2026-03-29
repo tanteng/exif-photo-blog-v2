@@ -73,6 +73,12 @@ export default function useImageZoomControls({
             setColorLight('#000');
           },
           hide: () => {
+            // Remove focus from viewer elements before aria-hidden is set
+            // to avoid "Blocked aria-hidden on a focused element" warning
+            if (document.activeElement instanceof HTMLElement &&
+              refViewerContainer.current?.contains(document.activeElement)) {
+              document.activeElement.blur();
+            }
             // Optimizes Safari status bar animation
             setTimeout(() => setColorLight(undefined), 300);
           },
