@@ -5,6 +5,9 @@ import {
   VERCEL_BYPASS_SECRET,
 } from '@/app/config';
 
+const COS_CUSTOM_DOMAIN =
+  process.env.NEXT_PUBLIC_TENCENT_COS_CUSTOM_DOMAIN || '';
+
 // Explicity defined next.config.js `imageSizes`
 type NextCustomSize = 200;
 
@@ -27,6 +30,13 @@ export const getNextImageUrlForRequest = ({
   baseUrl?: string
   addBypassSecret?: boolean
 }) => {
+  // For COS images, use Tencent CI for image processing
+  // This avoids hitting /_next/image and consuming server CPU
+  if (COS_CUSTOM_DOMAIN && imageUrl.includes(COS_CUSTOM_DOMAIN)) {
+    return `${imageUrl}?imageMogr2/thumbnail/${size}x/format/webp/quality/${quality}/interlace/1`;
+  }
+
+  // Fall back to Next.js image optimization for non-COS images
   const url = new URL(`${baseUrl}/_next/image`);
 
   url.searchParams.append('url', imageUrl);

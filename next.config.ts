@@ -88,6 +88,10 @@ const nextConfig: NextConfig = {
   // Increase timeout for static page generation during build (default 60s)
   staticPageGenerationTimeout: 90,
   images: {
+    // Use custom loader for Tencent COS CI image processing
+    // Falls back to default /_next/image for non-COS images
+    loader: 'custom',
+    loaderFile: './src/platforms/image-loader.ts',
     imageSizes: [200],
     qualities: [75, IMAGE_QUALITY],
     remotePatterns,
