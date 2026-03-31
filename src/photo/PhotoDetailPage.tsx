@@ -21,6 +21,7 @@ import {
 import YearHeader from '@/year/YearHeader';
 import RecentsHeader from '@/recents/RecentsHeader';
 import AlbumHeader from '@/album/AlbumHeader';
+import PhotoSwipeNavigator from './PhotoSwipeNavigator';
 
 export default function PhotoDetailPage({
   photo,
@@ -152,41 +153,55 @@ export default function PhotoDetailPage({
           hasAiTextGeneration={AI_CONTENT_GENERATION_ENABLED}
         />}
       />
-      <AnimateItems
-        className="md:mb-8"
-        animateFromAppState
-        items={[
-          <PhotoLarge
-            key={photo.id}
-            photo={photo}
-            album={album}
-            primaryTag={tag}
-            priority
-            prefetchRelatedLinks
-            recent={recent}
-            year={year}
-            showTitle={Boolean(customHeader)}
-            showTitleAsH1
-            showCamera={!camera}
-            showLens={!lens}
-            showFilm={!film}
-            showRecipe={!recipe}
-            shouldShare={shouldShare}
-            shouldShareRecents={recent !== undefined}
-            shouldShareYear={year !== undefined}
-            shouldShareCamera={camera !== undefined}
-            shouldShareLens={lens !== undefined}
-            shouldShareAlbum={album !== undefined}
-            shouldShareTag={tag !== undefined}
-            shouldShareFilm={film !== undefined}
-            shouldShareRecipe={recipe !== undefined}
-            shouldShareFocalLength={focal !== undefined}
-            includeFavoriteInAdminMenu={includeFavoriteInAdminMenu}
-            showAdminKeyCommands
-            showStorageCheck={ADMIN_STORAGE_DEBUG_ENABLED}
-          />,
-        ]}
-      />
+      <PhotoSwipeNavigator
+        photo={photo}
+        photos={photos}
+        recent={recent}
+        year={year}
+        camera={camera}
+        lens={lens}
+        album={album}
+        tag={tag}
+        film={film}
+        recipe={recipe}
+        focal={focal}
+      >
+        <AnimateItems
+          className="md:mb-8"
+          animateFromAppState
+          items={[
+            <PhotoLarge
+              key={photo.id}
+              photo={photo}
+              album={album}
+              primaryTag={tag}
+              priority
+              prefetchRelatedLinks
+              recent={recent}
+              year={year}
+              showTitle={Boolean(customHeader)}
+              showTitleAsH1
+              showCamera={!camera}
+              showLens={!lens}
+              showFilm={!film}
+              showRecipe={!recipe}
+              shouldShare={shouldShare}
+              shouldShareRecents={recent !== undefined}
+              shouldShareYear={year !== undefined}
+              shouldShareCamera={camera !== undefined}
+              shouldShareLens={lens !== undefined}
+              shouldShareAlbum={album !== undefined}
+              shouldShareTag={tag !== undefined}
+              shouldShareFilm={film !== undefined}
+              shouldShareRecipe={recipe !== undefined}
+              shouldShareFocalLength={focal !== undefined}
+              includeFavoriteInAdminMenu={includeFavoriteInAdminMenu}
+              showAdminKeyCommands
+              showStorageCheck={ADMIN_STORAGE_DEBUG_ENABLED}
+            />,
+          ]}
+        />
+      </PhotoSwipeNavigator>
       <AppGrid
         contentMain={<PhotoGrid
           photos={photosGrid ?? photos}
