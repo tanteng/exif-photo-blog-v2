@@ -808,7 +808,7 @@ export default function CommandKClient({
               .concat(categorySections)
               .concat(sortSection)
               .concat(sectionPages)
-              .concat(adminSection)
+              .concat(isUserSignedIn ? adminSection : [])
               .concat(clientSections)
               .filter(({ items }) => items.length > 0)
               .map(({ heading, accessory, items }) =>
