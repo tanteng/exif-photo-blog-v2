@@ -43,3 +43,4 @@ temp.jpg
 
 # workbuddy
 .workbuddy/
+.claude/settings.local.json
