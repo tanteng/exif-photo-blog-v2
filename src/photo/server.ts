@@ -38,7 +38,7 @@ import { getCompatibleExifValue } from '@/utility/exif';
 const IMAGE_WIDTH_BLUR = 200;
 const IMAGE_WIDTH_DEFAULT = 200;
 
-export const FETCH_TIMEOUT_MS = 10000;
+export const FETCH_TIMEOUT_MS = 20000;
 
 export const fetchWithTimeout = async (url: string, timeoutMs: number) => {
   const controller = new AbortController();
