@@ -37,6 +37,19 @@ import { getCompatibleExifValue } from '@/utility/exif';
 
 const IMAGE_WIDTH_BLUR = 200;
 const IMAGE_WIDTH_DEFAULT = 200;
+
+export const FETCH_TIMEOUT_MS = 10000;
+
+export const fetchWithTimeout = async (url: string, timeoutMs: number) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 const IMAGE_QUALITY_DEFAULT = 80;
 
 export const extractImageDataFromBlobPath = async (
@@ -76,7 +89,7 @@ export const extractImageDataFromBlobPath = async (
   let error: string | undefined;
 
   const fileBytes = blobPath
-    ? await fetch(url, { cache: 'no-store' }).then(res => res.arrayBuffer())
+    ? await fetchWithTimeout(url, FETCH_TIMEOUT_MS).then(res => res.arrayBuffer())
       .catch(e => {
         error = `Error fetching image from ${url}: "${e.message}"`;
         return undefined;
@@ -180,7 +193,7 @@ const blurImage = async (image: ArrayBuffer) =>
   );
 
 export const getImageBase64FromUrl = async (url: string) => 
-  fetch(decodeURIComponent(url))
+  fetchWithTimeout(decodeURIComponent(url), FETCH_TIMEOUT_MS)
     .then(res => res.arrayBuffer())
     .then(buffer => generateBase64(buffer))
     .catch(e => {
@@ -192,7 +205,7 @@ export const resizeImageFromUrl = async (
   url: string,
   width?: number,
 ) => 
-  fetch(decodeURIComponent(url))
+  fetchWithTimeout(decodeURIComponent(url), FETCH_TIMEOUT_MS)
     .then(res => res.arrayBuffer())
     .then(buffer => resizeImage(buffer, width))
     .catch(e => {
@@ -201,7 +214,7 @@ export const resizeImageFromUrl = async (
     });
 
 export const blurImageFromUrl = async (url: string) => 
-  fetch(decodeURIComponent(url))
+  fetchWithTimeout(decodeURIComponent(url), FETCH_TIMEOUT_MS)
     .then(res => res.arrayBuffer())
     .then(buffer => blurImage(buffer))
     .catch(e => {

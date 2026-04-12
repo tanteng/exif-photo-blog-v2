@@ -7,7 +7,7 @@ import { FastAverageColor } from 'fast-average-color';
 import { Oklch, PhotoColorData } from './client';
 import sharp from 'sharp';
 import { extractColors } from 'extract-colors';
-import { getImageBase64FromUrl } from '../server';
+import { getImageBase64FromUrl, fetchWithTimeout, FETCH_TIMEOUT_MS } from '../server';
 import { generateOpenAiImageQuery } from '@/platforms/openai';
 import { calculateColorSort } from './sort';
 import { getOptimizedPhotoUrlForManipulation } from '../storage';
@@ -30,7 +30,7 @@ export const convertHexToOklch = (hex: string): Oklch => {
 // Convert image url to byte array
 const getImageDataFromUrl = async (_url: string) => {
   const url = getOptimizedPhotoUrlForManipulation(_url, IS_PREVIEW);
-  const imageBuffer = await fetch(decodeURIComponent(url))
+  const imageBuffer = await fetchWithTimeout(decodeURIComponent(url), FETCH_TIMEOUT_MS)
     .then(res => res.arrayBuffer());
   const image = sharp(imageBuffer);
   const { width, height } = await image.metadata();
