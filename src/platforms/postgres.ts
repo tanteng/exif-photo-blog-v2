@@ -10,22 +10,25 @@ const pool = new Pool({
     ),
   },
   ...POSTGRES_SSL_ENABLED && { ssl: true },
-  connectionTimeoutMillis: 5000,    // 5s to establish connection
-  idleTimeoutMillis: 10000,         // 10s before idle client is closed
+  connectionTimeoutMillis: 10000,   // 10s to establish connection
+  idleTimeoutMillis: 30000,         // 30s before idle client is closed
   max: 10,                          // default pool size
 });
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 500;
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const isRetryableError = (error: any): boolean => {
   const code = error?.code || '';
+  const message = error?.message || '';
   return code === 'ETIMEDOUT' ||
     code === 'ECONNRESET' ||
     code === 'ECONNREFUSED' ||
-    code === 'CONNECTION_ENDED';
+    code === 'CONNECTION_ENDED' ||
+    message.includes('Connection terminated') ||
+    message.includes('connection timeout');
 };
 
 export type Primitive = string | number | boolean | undefined | null;
@@ -44,7 +47,7 @@ export const query = async <T extends QueryResultRow = any>(
       lastError = error;
       if (attempt < MAX_RETRIES && isRetryableError(error)) {
         console.warn(
-          `DB query failed (attempt ${attempt}/${MAX_RETRIES}): ${(error as any)?.code}. Retrying in ${RETRY_DELAY_MS}ms...`,
+          `DB query failed (attempt ${attempt}/${MAX_RETRIES}): ${(error as any)?.code || (error as any)?.message}. Retrying in ${RETRY_DELAY_MS}ms...`,
         );
         await sleep(RETRY_DELAY_MS);
       }
