@@ -26,7 +26,7 @@ rm -rf .next-old
 [ -d .next ] && mv .next .next-old
 mv $BUILD_DIR/.next .next
 
-echo "♻️ Reloading PM2 process (zero downtime)..."
+echo "♻️ Restarting PM2 process..."
 pm2 reload photo-blog
 
 # 等待服务就绪
