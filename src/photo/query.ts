@@ -38,6 +38,18 @@ import { Years } from '@/year';
 import { PhotoColorData } from '@/photo/color/client';
 import { safelyQuery } from '@/db/query';
 
+// Fields for list queries (excludes blur_data to reduce payload)
+const PHOTO_LIST_FIELDS = [
+  'id', 'url', 'extension', 'width', 'height', 'aspect_ratio',
+  'title', 'caption', 'semantic_description', 'tags',
+  'make', 'model', 'focal_length', 'focal_length_in_35mm_format',
+  'lens_make', 'lens_model', 'f_number', 'iso', 'exposure_time',
+  'exposure_compensation', 'location_name', 'latitude', 'longitude',
+  'film', 'recipe_title', 'recipe_data', 'color_data', 'color_sort',
+  'priority_order', 'taken_at', 'taken_at_naive',
+  'exclude_from_feeds', 'hidden', 'updated_at', 'created_at',
+];
+
 export const createPhotosTable = () =>
   sql`
     CREATE TABLE IF NOT EXISTS photos (
@@ -477,7 +489,7 @@ const _getPhotos = async (
 
 export const getPhotos = async (options: PhotoQueryOptions = {}) =>
   safelyQuery(
-    async () => _getPhotos(options).then(({ photos }) => photos),
+    async () => _getPhotos(options, PHOTO_LIST_FIELDS).then(({ photos }) => photos),
     'getPhotos',
     // Seemingly necessary to pass `options` for expected cache behavior
     options,
