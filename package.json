@@ -20,6 +20,7 @@
     "@radix-ui/react-visually-hidden": "^1.2.4",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "ioredis": "^5.6.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.3.1",
     "@vercel/speed-insights": "^2.0.0",
