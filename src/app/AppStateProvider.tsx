@@ -45,9 +45,11 @@ import useSupportsHover from '@/utility/useSupportsHover';
 export default function AppStateProvider({
   children,
   areAdminDebugToolsEnabled,
+  hasRedis,
 }: {
   children: ReactNode
   areAdminDebugToolsEnabled?: boolean
+  hasRedis?: boolean
 }) {
   const router = useRouter();
 
@@ -122,7 +124,7 @@ export default function AppStateProvider({
     setUserEmailEager(getAuthEmailCookie());
     // Capture backup timezone on client
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
-    if (IS_PRODUCTION) { warmRedisAction(); }
+    if (IS_PRODUCTION && hasRedis) { warmRedisAction(); }
     const timeout = setTimeout(() => {
       setHasLoadedWithAnimations(true);
     }, 1000);
