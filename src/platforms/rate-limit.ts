@@ -1,5 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis } from './redis';
+import { redisRateLimitClient } from './redis';
 
 export const checkRateLimitAndThrow = async ({
   identifier,
@@ -10,9 +10,12 @@ export const checkRateLimitAndThrow = async ({
   tokens?: number
   duration?: Parameters<typeof Ratelimit.slidingWindow>[1]
 }) => {
-  if (redis) {
+  // @upstash/ratelimit only supports the Upstash HTTP client. When using
+  // a local ioredis backend, redisRateLimitClient is undefined and rate
+  // limiting is skipped (acceptable for self-hosted single-node setups).
+  if (redisRateLimitClient) {
     const limiter = new Ratelimit({
-      redis,
+      redis: redisRateLimitClient,
       limiter: Ratelimit.slidingWindow(tokens, duration),
     });
     let success = false;
