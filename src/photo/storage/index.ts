@@ -10,10 +10,7 @@ import {
   uploadFileFromClient,
 } from '@/platforms/storage';
 import { Photo } from '..';
-import {
-  fetchBase64ImageFromUrl,
-  fetchNormalizedBase64ImageFromUrl,
-} from '@/utility/image';
+import { fetchBase64ImageFromUrl } from '@/utility/image';
 
 const PREFIX_PHOTO = 'photo';
 const PREFIX_UPLOAD = 'upload';
@@ -160,6 +157,10 @@ export const getDataUrlsForPhotos = async (
   optimizedSuffix: OptimizedSuffix,
   nextImageWidth: NextImageSize,
   addBypassSecret: boolean,
+  // Optional server-only normalizer (e.g. sharp-based `resizeImageFromUrl`)
+  // injected by the caller to avoid importing sharp into this shared
+  // module's dependency graph. Returns a base64 data URL ('' on failure).
+  normalizeFromUrl?: (url: string, width?: number) => Promise<string>,
 ): Promise<{ id: string, urlData: string }[]> =>
   Promise.all(photos
     .map(async({ id, url }) => {
@@ -174,16 +175,16 @@ export const getDataUrlsForPhotos = async (
         return { id, urlData: optimizedUrlData };
       }
 
-      // Fall back to re-encoding the original via sharp. This avoids the
-      // build-time `/_next/image` self-request (unreliable during
-      // prerender) and guarantees a satori-decodable baseline JPEG,
-      // preventing "Invalid JPEG" errors from aborting the build.
-      const normalized = await fetchNormalizedBase64ImageFromUrl(
-        url,
-        nextImageWidth,
-      );
-      if (normalized) {
-        return { id, urlData: normalized };
+      // Fall back to re-encoding the original via the injected sharp
+      // normalizer. This avoids the build-time `/_next/image`
+      // self-request (unreliable during prerender) and guarantees a
+      // satori-decodable baseline JPEG, preventing "Invalid JPEG"
+      // errors from aborting the build.
+      if (normalizeFromUrl) {
+        const normalized = await normalizeFromUrl(url, nextImageWidth);
+        if (normalized) {
+          return { id, urlData: normalized };
+        }
       }
 
       // Last resort: the `next/image` optimization endpoint

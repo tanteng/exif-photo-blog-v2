@@ -4,6 +4,7 @@ import { Photo } from '@/photo';
 import { NextImageSize } from '@/platforms/next-image';
 import { IS_PREVIEW } from '@/app/config';
 import { getDataUrlsForPhotos } from '@/photo/storage';
+import { resizeImageFromUrl } from '@/photo/server';
 
 export default async function ImagePhotoGrid({
   photos,
@@ -57,6 +58,9 @@ export default async function ImagePhotoGrid({
     optimizedSuffix,
     nextImageWidth,
     IS_PREVIEW,
+    // Inject sharp-based normalizer (server-only) so OG images get a
+    // baseline JPEG satori can always decode, bypassing /_next/image.
+    resizeImageFromUrl,
   );
 
   const renderPhoto = (
