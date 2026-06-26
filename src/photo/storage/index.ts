@@ -10,7 +10,10 @@ import {
   uploadFileFromClient,
 } from '@/platforms/storage';
 import { Photo } from '..';
-import { fetchBase64ImageFromUrl } from '@/utility/image';
+import {
+  fetchBase64ImageFromUrl,
+  fetchNormalizedBase64ImageFromUrl,
+} from '@/utility/image';
 
 const PREFIX_PHOTO = 'photo';
 const PREFIX_UPLOAD = 'upload';
@@ -160,7 +163,7 @@ export const getDataUrlsForPhotos = async (
 ): Promise<{ id: string, urlData: string }[]> =>
   Promise.all(photos
     .map(async({ id, url }) => {
-      // Check for optimized image first
+      // Check for pre-generated optimized image first
       const optimizedUrl = await getSignedUrlForUrl(
         getOptimizedPhotoUrlForSuffix(url, optimizedSuffix),
         'GET',
@@ -169,18 +172,31 @@ export const getDataUrlsForPhotos = async (
 
       if (optimizedUrlData) {
         return { id, urlData: optimizedUrlData };
-      } else {
-        // Fall back on `next/image` if optimized image is not available
-        const nextImageUrl = getOptimizedPhotoUrl({
-          imageUrl: url,
-          size: nextImageWidth,
-          addBypassSecret,
-        });
-        const nextImageUrlData = await fetchBase64ImageFromUrl(nextImageUrl);
-        return { id, urlData: nextImageUrlData };
       }
+
+      // Fall back to re-encoding the original via sharp. This avoids the
+      // build-time `/_next/image` self-request (unreliable during
+      // prerender) and guarantees a satori-decodable baseline JPEG,
+      // preventing "Invalid JPEG" errors from aborting the build.
+      const normalized = await fetchNormalizedBase64ImageFromUrl(
+        url,
+        nextImageWidth,
+      );
+      if (normalized) {
+        return { id, urlData: normalized };
+      }
+
+      // Last resort: the `next/image` optimization endpoint
+      const nextImageUrl = getOptimizedPhotoUrl({
+        imageUrl: url,
+        size: nextImageWidth,
+        addBypassSecret,
+      });
+      const nextImageUrlData = await fetchBase64ImageFromUrl(nextImageUrl);
+      return { id, urlData: nextImageUrlData };
     }))
-    .then(urls => urls.every(({ urlData }) => Boolean(urlData))
-      ? urls as { id: string, urlData: string }[]
-      // If any url is undefined, return an empty array
-      : []);
+    // Keep successfully-loaded photos; skip any that failed so a single
+    // bad image degrades the grid gracefully instead of blanking it.
+    .then(urls => urls.filter(
+      (u): u is { id: string, urlData: string } => Boolean(u.urlData),
+    ));
