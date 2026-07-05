@@ -148,13 +148,27 @@ export default function AppStateProvider({
     getCountsForCategoriesCachedAction,
   );
 
+  // NOTE: SWR 本身没有 timeout 配置项，超时要在 fetcher 内实现。
+  // 这里给 getAuthAction 包一层 5s 超时保护，避免在部分内置浏览器
+  // (如 QQ 浏览器) 上 Server Action POST 被卡住导致 Footer 菊花无限转。
+  const authFetcherWithTimeout = useCallback(async () => {
+    return await Promise.race([
+      getAuthAction(),
+      new Promise<null>(resolve => setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          // eslint-disable-next-line no-console
+          console.warn('[Auth] getAuthAction timed out after 5s, treating as signed-out');
+        }
+        resolve(null);
+      }, 5000)),
+    ]);
+  }, []);
+
   const {
     data: auth,
     error: authError,
     isLoading: isCheckingAuth,
-  } = useSWR(SWR_KEYS.GET_AUTH, getAuthAction, {
-    fetcherTimeout: 5000,
-  });
+  } = useSWR(SWR_KEYS.GET_AUTH, authFetcherWithTimeout);
   useEffect(() => {
     if (auth === null || authError) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
