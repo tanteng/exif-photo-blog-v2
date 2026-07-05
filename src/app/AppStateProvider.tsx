@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { AppStateContext } from '../app/AppState';
 import { AnimationConfig } from '@/components/AnimateItems';
-import { getAuthAction } from '@/auth/actions';
+import type { Session } from 'next-auth';
 import useSWR, { useSWRConfig } from 'swr';
 import {
   HIGH_DENSITY_GRID,
@@ -148,27 +148,25 @@ export default function AppStateProvider({
     getCountsForCategoriesCachedAction,
   );
 
-  // NOTE: SWR 本身没有 timeout 配置项，超时要在 fetcher 内实现。
-  // 这里给 getAuthAction 包一层 5s 超时保护，避免在部分内置浏览器
-  // (如 QQ 浏览器) 上 Server Action POST 被卡住导致 Footer 菊花无限转。
-  const authFetcherWithTimeout = useCallback(async () => {
-    return await Promise.race([
-      getAuthAction(),
-      new Promise<null>(resolve => setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.warn('[Auth] getAuthAction timed out after 5s, treating as signed-out');
-        }
-        resolve(null);
-      }, 5000)),
-    ]);
+  // 用 next-auth 内置的 GET /api/auth/session 替代 Server Action getAuthAction。
+  // Server Action 本质是 RSC POST，某些环境 (PC 首访、QQ 浏览器 X5 内核等) 会
+  // 长时间不返回；GET API Route 是标准 fetch，兼容性和延迟稳定，无需超时兜底。
+  const authFetcher = useCallback(async (): Promise<Session | null> => {
+    const res = await fetch('/api/auth/session', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // next-auth 未登录时返回 {} 或 null；这里统一成 null
+    return data && Object.keys(data).length > 0 ? (data as Session) : null;
   }, []);
 
   const {
     data: auth,
     error: authError,
     isLoading: isCheckingAuth,
-  } = useSWR(SWR_KEYS.GET_AUTH, authFetcherWithTimeout);
+  } = useSWR(SWR_KEYS.GET_AUTH, authFetcher);
   useEffect(() => {
     if (auth === null || authError) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
