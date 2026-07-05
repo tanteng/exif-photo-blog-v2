@@ -153,7 +153,7 @@ export default function AppStateProvider({
     error: authError,
     isLoading: isCheckingAuth,
   } = useSWR(SWR_KEYS.GET_AUTH, getAuthAction, {
-    timeout: 5000,
+    fetcherTimeout: 5000,
   });
   useEffect(() => {
     if (auth === null || authError) {
