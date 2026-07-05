@@ -152,7 +152,9 @@ export default function AppStateProvider({
     data: auth,
     error: authError,
     isLoading: isCheckingAuth,
-  } = useSWR(SWR_KEYS.GET_AUTH, getAuthAction);
+  } = useSWR(SWR_KEYS.GET_AUTH, getAuthAction, {
+    timeout: 5000,
+  });
   useEffect(() => {
     if (auth === null || authError) {
       // eslint-disable-next-line react-hooks/set-state-in-effect

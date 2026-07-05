@@ -49,7 +49,17 @@ export const signInAction = async (
 export const signOutAction = async () =>
   signOut({ redirect: false });
 
-export const getAuthAction = async () => auth();
+export const getAuthAction = async () => {
+  console.log('[Auth] getAuthAction called');
+  try {
+    const result = await auth();
+    console.log('[Auth] getAuthAction result:', result);
+    return result;
+  } catch (error) {
+    console.log('[Auth] getAuthAction error:', error);
+    throw error;
+  }
+};
 
 export const logClientAuthUpdate = async (data: Session | null | undefined) =>
   console.log('Client auth update', data);
