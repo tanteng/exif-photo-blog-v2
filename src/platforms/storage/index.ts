@@ -134,11 +134,31 @@ export const uploadFromClientViaPresignedUrl = async (
   file: File | Blob,
   fileName: string,
 ) => {
-  const url = await fetch(`${PATH_API_PRESIGNED_URL}/${fileName}`)
-    .then((response) => response.text());
+  // EdgeOne (and many CDNs) strip the Cookie request header from paths that
+  // end in a static-asset extension (.jpg/.png/.webp/...), which makes auth()
+  // on the presigned-url route return 401. Encode the dot(s) as %2E so the
+  // request path carries no literal extension. Next.js decodes the dynamic
+  // [key] segment back to "." server-side, so the COS object key is unchanged.
+  const keyForRequest = fileName.replace(/\./g, '%2E');
 
-  return fetch(url, { method: 'PUT', body: file })
-    .then(() => `${baseUrlForStorage(CURRENT_STORAGE)}/${fileName}`);
+  const response = await fetch(`${PATH_API_PRESIGNED_URL}/${keyForRequest}`);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to get presigned URL for "${fileName}": ` +
+      `${response.status} ${response.statusText}`,
+    );
+  }
+  const url = await response.text();
+
+  const putResponse = await fetch(url, { method: 'PUT', body: file });
+  if (!putResponse.ok) {
+    throw new Error(
+      `Failed to upload "${fileName}" to storage: ` +
+      `${putResponse.status} ${putResponse.statusText}`,
+    );
+  }
+
+  return `${baseUrlForStorage(CURRENT_STORAGE)}/${fileName}`;
 };
 
 export const uploadFileFromClient = async (

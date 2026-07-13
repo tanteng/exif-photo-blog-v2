@@ -8,7 +8,7 @@ export async function GET(
   const { key } = await params;
 
   const session = await auth();
-  
+
   if (session?.user && key) {    
     const url = await getSignedUrlForKey(key, 'PUT');
     return new Response(
