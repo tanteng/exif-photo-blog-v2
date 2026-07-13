@@ -131,10 +131,15 @@ export default function InfinitePhotoScroll({
   , [data, itemsPerPage]);
 
   const advance = useCallback(() => {
+    // On error, do NOT auto-advance (e.g. from useVisibility). Otherwise a
+    // failed page fetch — such as a stale CDN server-action id returning 404 —
+    // keeps calling setSize, triggering another failing POST, looping forever.
+    // The user must explicitly click "try again" to retry.
+    if (error) return;
     if (!isFinished && !isLoadingOrValidating) {
       setSize((data?.length ?? 0) + 1);
     }
-  }, [isFinished, isLoadingOrValidating, setSize, data]);
+  }, [error, isFinished, isLoadingOrValidating, setSize, data]);
 
   const revalidatePhoto: RevalidatePhoto = useCallback((
     photoId: string,
