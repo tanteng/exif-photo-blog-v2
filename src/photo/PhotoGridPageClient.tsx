@@ -20,7 +20,6 @@ export default function PhotoGridPageClient({
   photosCountWithExcludes,
   sortBy,
   sortWithPriority,
-  animateInitialItems,
   ...categories
 }: ComponentProps<typeof PhotoGridSidebar> & {
   photos: Photo[]
@@ -28,7 +27,6 @@ export default function PhotoGridPageClient({
   photosCountWithExcludes: number
   sortBy: SortBy
   sortWithPriority: boolean
-  animateInitialItems?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -45,7 +43,7 @@ export default function PhotoGridPageClient({
     <div>
       {shouldShowTopEntities &&
         <AnimateItems
-          type={animateInitialItems === false ? 'none' : 'bottom'}
+          type="none"
           items={[
             <div key="mobile-sidebar" className={clsx(
               'flex gap-x-2',
@@ -64,7 +62,6 @@ export default function PhotoGridPageClient({
         count={photosCount}
         sortBy={sortBy}
         sortWithPriority={sortWithPriority}
-        animateInitialItems={animateInitialItems}
         excludeFromFeeds
         prioritizeInitialPhotos
         sidebar={

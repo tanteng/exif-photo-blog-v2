@@ -17,7 +17,6 @@ export default function PhotoGridContainer({
   sortWithPriority,
   excludeFromFeeds,
   animateOnFirstLoadOnly,
-  animateInitialItems,
   header,
   sidebar,
   className,
@@ -31,7 +30,6 @@ export default function PhotoGridContainer({
   header?: ReactNode
   sidebar?: ReactNode
   className?: string
-  animateInitialItems?: boolean
 } & ComponentProps<typeof PhotoGrid>) {
   const [
     shouldAnimateDynamicItems,
@@ -48,7 +46,7 @@ export default function PhotoGridContainer({
       )}>
         {header &&
           <AnimateItems
-            type={animateInitialItems === false ? 'none' : 'bottom'}
+            type="none"
             items={[header]}
             animateOnFirstLoadOnly
           />}
@@ -56,7 +54,7 @@ export default function PhotoGridContainer({
           <PhotoGrid {...{
             photos,
             ...categories,
-            animate: animateInitialItems,
+            animate: false,
             animateOnFirstLoadOnly,
             onAnimationComplete,
           }} />

@@ -94,7 +94,6 @@ describe('PhotoGridPageClient initial animation', () => {
       photosCountWithExcludes: 2,
       sortBy: 'takenAt',
       sortWithPriority: false,
-      animateInitialItems: false,
       recents: [],
       years: [],
       cameras: [],

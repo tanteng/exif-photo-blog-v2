@@ -52,7 +52,6 @@ export default async function HomePage() {
             photos,
             photosCount,
             photosCountWithExcludes,
-            animateInitialItems: false,
             ...USER_DEFAULT_SORT_OPTIONS,
             ...categories,
           }}
