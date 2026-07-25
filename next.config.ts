@@ -2,6 +2,7 @@ import { removeUrlProtocol } from '@/utility/url';
 import type { NextConfig } from 'next';
 import { RemotePattern } from 'next/dist/shared/lib/image-config';
 import path from 'path';
+import fs from 'fs';
 
 const VERCEL_BLOB_STORE_ID = process.env.BLOB_READ_WRITE_TOKEN?.match(
   /^vercel_blob_rw_([a-z0-9]+)_[a-z0-9]+$/i,
@@ -104,11 +105,26 @@ const nextConfig: NextConfig = {
       [LOCALE_ALIAS]: `@/${LOCALE_DYNAMIC}`,
     },
   },
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       [LOCALE_ALIAS]: path.resolve(__dirname, `src/${LOCALE_DYNAMIC}`),
     };
+
+    if (!dev) {
+      const compiledCss = path.resolve(
+        __dirname,
+        '.next/cache/tailwind.compiled.css',
+      );
+      if (!fs.existsSync(compiledCss)) {
+        throw new Error(
+          // eslint-disable-next-line max-len
+          `Missing ${compiledCss}. Run "pnpm build:css" before "next build" (use "pnpm build").`,
+        );
+      }
+      config.resolve.alias['../tailwind.css$'] = compiledCss;
+    }
+
     return config;
   },
 };

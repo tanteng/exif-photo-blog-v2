@@ -6,8 +6,9 @@ BUILD_DIR=/opt/exif-photo-blog-build
 
 # 限制 Node 构建堆内存，避免服务器内存不足时被 OOM Killer 杀掉构建进程。
 # 服务器物理内存仅约 3.6G，默认情况下 next build 峰值会打满内存触发 OOM。
-# 可通过环境变量覆盖，例如：NODE_BUILD_MEM=1536 bash deploy.sh
-NODE_BUILD_MEM="${NODE_BUILD_MEM:-1024}"
+# Tailwind 预编译已挪出 webpack（pnpm build:css），但 webpack 模块图本身仍需约 1.1 GiB 峰值；
+# 所以默认堆上限从 1024 提到 2048。仍可通过环境变量覆盖，例如：NODE_BUILD_MEM=1536 bash deploy.sh
+NODE_BUILD_MEM="${NODE_BUILD_MEM:-2048}"
 
 echo "📥 Pulling latest code from GitHub..."
 cd $PROJECT_DIR
