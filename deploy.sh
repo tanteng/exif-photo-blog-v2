@@ -29,12 +29,10 @@ fi
 sync
 echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
 
-# 腾讯云 TAT agent (tat_agent) 在长跑下会缓慢泄漏 RSS 到 3+ GB。在 build 启动前
-# 重置一次，腾出 ~3 GB headroom（主机仅 3.6 GiB）。tat_agent 自身 systemd unit
-# 配了 Restart=always / RestartSec=1s，手动 restart 无副作用。
-echo "♻️  Restarting tat_agent to reclaim leaked memory (~3GB on 3.6GB host)..."
-systemctl restart tat_agent 2>/dev/null || true
-sleep 1
+# 注意：之前尝试过 `systemctl restart tat_agent` 来回收它的 RSS 泄漏，
+# 但 tat_agent 实际管所有 terminal sessions（含 SSH），restart 会把当前 ssh
+# 会话一起杀掉，操作员会立刻失联。已停用。如果将来想清 tat_agent 泄漏，
+# 必须找一个不打断活跃 session 的方式（例如 SIGTERM 给主进程，让它 fork-replace）。
 
 echo "📥 Pulling latest code from GitHub..."
 cd $PROJECT_DIR
