@@ -38,39 +38,30 @@ EdgeOne 配置：默认长缓存即可。无需特殊规则。
 
 不缓存，由 EdgeOne 透传即可（默认 `Cache-Control: no-store` 或短 TTL）。
 
-## EdgeOne 推荐的兜底规则（伪配置）
+## EdgeOne 当前规则
 
-以腾讯云 EdgeOne 为例，规则名 `exif-photo-blog-b-class-fallback`：
+完整规则定义在 [`edgeone-rules.json`](./edgeone-rules.json)，按优先级从高到低执行：
 
-```
-优先级：低（兜底用，不要覆盖显式 Cache-Control）
-匹配路径：
-  /p/*
-不匹配路径：
-  /admin/*
-  /api/auth/*
-  /sign-in
-行为：
-  边缘缓存：开启
-  缓存 TTL（max-age）：86400 秒（1 天）
-  浏览器缓存 TTL：0（让浏览器回源校验，避免用户本地陈旧）
-  stale-while-revalidate：86400 秒（1 天）—— 缓存过期后 1 天内仍可用旧缓存，后台异步回源刷新
-  stale-if-error：604800 秒（7 天）—— origin 连续失败 7 天内仍可用旧缓存
-  回源跟随 3xx：是
-  回源跟随参数：仅必要（避免 cache key 抖动）
-```
+| 顺序 | 规则名 | 匹配路径 | 缓存策略 |
+|---|---|---|---|
+| 1 | `RSC 缓存区分` | 全部 | CacheKey 按 `RSC` / `Next-Router-Prefetch` header 分桶（避免 prefetch 污染主缓存） |
+| 2 | `edge-cache-photo-og` | `/p/*/image` | TTL 86400s + 智能预刷新 + 离线缓存 |
+| 3 | `edge-cache-photo-page` | `/p/*` | TTL 86400s + 智能预刷新 + 离线缓存 |
+| 4 | `edge-cache-listing` | `/tag/*`, `/album/*`, `/camera/*`, `/lens/*`, `/recipe/*`, `/film/*`, `/focal/*`, `/year/*`, `/shot-on/*`, `/grid/*`, `/full/*`, `/recents/*` | TTL 86400s + 智能预刷新 + 离线缓存 |
 
-为 OG 图单独一条：
+行为说明：
 
-```
-匹配路径：
-  /p/*/image
-行为：
-  缓存 TTL（max-age）：604800 秒（7 天，OG 图很少变）
-  stale-if-error：2592000 秒（30 天）
-```
+- **Cache.CustomTime** = 自定义缓存 TTL，86400 秒（1 天）
+- **CachePrefresh** = 智能缓存预刷新，临近过期时后台异步回源刷新，等价 `stale-while-revalidate`
+- **OfflineCache** = 离线缓存，origin 返回 5xx 时返回陈旧缓存，等价 `stale-if-error`
 
-A 类路由可以**不**显式配规则，让 EdgeOne 默认长缓存（来自 Next.js build 产物的静态文件）。若需要显式控制，可加一条 `cache-control: public, max-age=31536000, immutable`。
+### 导入方式
+
+在 EdgeOne 控制台 → 站点 → 规则引擎 → 规则 → 导入 → 选择 `edgeone-rules.json`。导入时如果有同名规则，会被覆盖。
+
+### A 类路由为什么没列规则
+
+`/`、`/grid`、`/full`、`/recents` 和所有 category 页是 build-time 完整预渲染的静态文件，EdgeOne 默认长缓存即可。无需额外规则。若需要显式控制，可加一条 `cache-control: public, max-age=31536000, immutable`。
 
 ## 缓存清理
 
@@ -86,7 +77,7 @@ B 类规则在每次 deploy 后第一次回源就会刷新，所以 purge 的关
 | 现象 | 可能原因 |
 |------|---------|
 | 部署后旧图/旧 tag 还在 | `purge-edgeone-cache.sh` 没覆盖对应路径 |
-| origin 挂掉仍 502 | EdgeOne B 类规则没配 stale-if-error，或者 cache key 漂移导致永远 miss |
+| origin 挂掉仍 502 | `edge-cache-photo-page` / `edge-cache-photo-og` 规则没启用 OfflineCache，或缓存未命中 |
 | 新上传的照片访问 404 | `getPhotoCached` 的 `unstable_cache`（`src/photo/cache.ts:139`）key 没失效 —— 检查 `app/admin/actions.ts` 的 `revalidatePath` 是否覆盖 `/p/[photoId]` 路径 |
 | build 时只预渲染 < N 张 | `GENERATE_STATIC_PARAMS_LIMIT` 设太低，或 SQL 没 ORDER BY（现已修） |
 
