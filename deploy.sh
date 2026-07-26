@@ -10,6 +10,13 @@ BUILD_DIR=/opt/exif-photo-blog-build
 # 所以默认堆上限从 1024 提到 2048。仍可通过环境变量覆盖，例如：NODE_BUILD_MEM=1536 bash deploy.sh
 NODE_BUILD_MEM="${NODE_BUILD_MEM:-2048}"
 
+# 腾讯云 TAT agent (tat_agent) 在长跑下会缓慢泄漏 RSS 到 3+ GB。在 build 启动前
+# 重置一次，腾出 ~3 GB headroom（主机仅 3.6 GiB）。tat_agent 自身 systemd unit
+# 配了 Restart=always / RestartSec=1s，手动 restart 无副作用。
+echo "♻️  Restarting tat_agent to reclaim leaked memory (~3GB on 3.6GB host)..."
+systemctl restart tat_agent 2>/dev/null || true
+sleep 1
+
 echo "📥 Pulling latest code from GitHub..."
 cd $PROJECT_DIR
 git pull origin main
