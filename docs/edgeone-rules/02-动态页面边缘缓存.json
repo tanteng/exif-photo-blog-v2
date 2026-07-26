@@ -2,29 +2,6 @@
   "FormatVersion": "1.0",
   "Rules": [
     {
-      "RuleName": "RSC 缓存区分",
-      "Branches": [
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space']",
-          "Actions": [
-            {
-              "Name": "CacheKey",
-              "CacheKeyParameters": {
-                "Header": {
-                  "Switch": "on",
-                  "Values": [
-                    "RSC",
-                    "Next-Router-Prefetch"
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "Description": []
-    },
-    {
       "RuleName": "动态页面边缘缓存",
       "Branches": [
         {
@@ -56,7 +33,9 @@
           ]
         }
       ],
-      "Description": ["合并所有动态页面缓存规则：照片详情/OG图片、标签、相册、相机、镜头、配方、胶片、焦距、年份、shot-on、网格、全幅、最近"]
+      "Description": [
+        "合并所有动态页面缓存规则：照片详情/OG图片、标签、相册、相机、镜头、配方、胶片、焦距、年份、shot-on、网格、全幅、最近"
+      ]
     }
   ]
 }
