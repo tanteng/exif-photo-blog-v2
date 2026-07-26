@@ -11,7 +11,8 @@ import {
 import { getNavSortControlFromString, getSortByFromString } from '@/photo/sort';
 import { parseChromaCutoff, parseStartingHue } from '@/photo/color/sort';
 import { parseSocialKeysFromString } from '@/social';
-import { dependencies } from '../../package.json';
+import pkg from '../../package.json';
+const { dependencies } = pkg;
 
 // HARD-CODED GLOBAL CONFIGURATION
 
