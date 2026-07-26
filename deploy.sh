@@ -10,6 +10,25 @@ BUILD_DIR=/opt/exif-photo-blog-build
 # 所以默认堆上限从 1024 提到 2048。仍可通过环境变量覆盖，例如：NODE_BUILD_MEM=1536 bash deploy.sh
 NODE_BUILD_MEM="${NODE_BUILD_MEM:-2048}"
 
+# 确保 build 有足够 swap。tailwindcss v4 的 @tailwindcss/oxide 进程峰值吃 3+ GB
+# 内存，主机仅 3.6 GiB 物理内存，全部靠 swap 兜底。当前 6 GB swap 在长跑后经常
+# 被 next-server 等冷页面占满，build 一启动 free swap 立刻归零 → OOM。
+# 加 4 GB 高优先级 swap 文件，让 kernel 有地方安置 tailwindcss 工作集。
+# 幂等：检查 /swapfile3 是否已存在。
+if [ ! -f /swapfile3 ]; then
+  echo "💾 Creating 4 GB swap file /swapfile3 (one-time, brings total swap to 10 GB)..."
+  fallocate -l 4G /swapfile3 || dd if=/dev/zero of=/swapfile3 bs=1M count=4096 status=none
+  chmod 600 /swapfile3
+  mkswap /swapfile3
+  swapon -p -1 /swapfile3
+  grep -q '/swapfile3' /etc/fstab || echo '/swapfile3 none swap sw,pri=-1 0 0' >> /etc/fstab
+fi
+
+# 释放 page cache 和 inode/dentry，给 build 让出可回收内存。page cache 在 build
+# 时没有用（不会读自己刚写的文件），drop 掉是纯赚。
+sync
+echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+
 # 腾讯云 TAT agent (tat_agent) 在长跑下会缓慢泄漏 RSS 到 3+ GB。在 build 启动前
 # 重置一次，腾出 ~3 GB headroom（主机仅 3.6 GiB）。tat_agent 自身 systemd unit
 # 配了 Restart=always / RestartSec=1s，手动 restart 无副作用。
