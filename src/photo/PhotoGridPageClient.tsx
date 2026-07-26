@@ -12,6 +12,7 @@ import { SortBy } from './sort';
 import useViewportHeight from '@/utility/useViewportHeight';
 import TopPhotoEntities from './TopPhotoEntities';
 import AnimateItems from '@/components/AnimateItems';
+import PhotoPreloadLinks from './PhotoPreloadLinks';
 import { hasEnoughTopEntities } from '@/category/mobile';
 
 export default function PhotoGridPageClient({
@@ -41,6 +42,7 @@ export default function PhotoGridPageClient({
 
   return (
     <div>
+      <PhotoPreloadLinks photos={photos} />
       {shouldShowTopEntities &&
         <AnimateItems
           type="none"

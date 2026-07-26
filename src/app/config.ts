@@ -241,6 +241,64 @@ export const CURRENT_STORAGE: StorageType =
             : 'vercel-blob'
   );
 
+// Hosts the browser should preconnect to so that first-image requests don't
+// pay DNS+TCP+TLS latency on slow networks. Mirrors the hostname logic in
+// next.config.ts so every configured storage backend gets a preconnect hint.
+// `crossOrigin: 'anonymous'` is required to warm the TLS handshake (not just
+// DNS+TCP) for cross-origin image fetches.
+export const STORAGE_PRECONNECT_HOSTS: string[] = (() => {
+  const hosts: string[] = [];
+
+  if (HAS_VERCEL_BLOB_STORAGE) {
+    const token = process.env.BLOB_READ_WRITE_TOKEN ?? '';
+    const storeId = token.match(
+      /^vercel_blob_rw_([a-z0-9]+)_[a-z0-9]+$/i,
+    )?.[1].toLowerCase();
+    if (storeId) {
+      hosts.push(`https://${storeId}.public.blob.vercel-storage.com`);
+    }
+  }
+
+  if (HAS_CLOUDFLARE_R2_STORAGE_CLIENT) {
+    const domain = process.env.NEXT_PUBLIC_CLOUDFLARE_R2_PUBLIC_DOMAIN;
+    if (domain) {
+      hosts.push(`https://${domain.replace(/^https?:\/\//, '')}`);
+    }
+  }
+
+  if (HAS_AWS_S3_STORAGE_CLIENT) {
+    const bucket = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+    const region = process.env.NEXT_PUBLIC_AWS_S3_REGION;
+    if (bucket && region) {
+      hosts.push(`https://${bucket}.s3.${region}.amazonaws.com`);
+    }
+  }
+
+  if (HAS_MINIO_STORAGE_CLIENT) {
+    const domain = process.env.NEXT_PUBLIC_MINIO_DOMAIN;
+    if (domain) {
+      const protocol = process.env.NEXT_PUBLIC_MINIO_DISABLE_SSL === '1'
+        ? 'http'
+        : 'https';
+      hosts.push(`${protocol}://${domain.replace(/^https?:\/\//, '')}`);
+    }
+  }
+
+  if (HAS_TENCENT_COS_STORAGE_CLIENT) {
+    const custom = process.env.NEXT_PUBLIC_TENCENT_COS_CUSTOM_DOMAIN;
+    const bucket = process.env.NEXT_PUBLIC_TENCENT_COS_BUCKET;
+    const region = process.env.NEXT_PUBLIC_TENCENT_COS_REGION;
+    const host = custom
+      ? custom.replace(/^https?:\/\//, '')
+      : (bucket && region ? `${bucket}.cos.${region}.myqcloud.com` : '');
+    if (host) {
+      hosts.push(`https://${host}`);
+    }
+  }
+
+  return hosts;
+})();
+
 // PERFORMANCE
 
 export const STATICALLY_OPTIMIZED_PHOTOS =

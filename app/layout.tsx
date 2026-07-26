@@ -32,6 +32,7 @@ import { Metadata } from 'next/types';
 import { ThemeProvider } from 'next-themes';
 import Nav from '@/app/Nav';
 import Footer from '@/app/Footer';
+import { STORAGE_PRECONNECT_HOSTS } from '@/app/config';
 import CommandK from '@/cmdk/CommandK';
 import SwrConfigClient from '@/swr/SwrConfigClient';
 import ShareModals from '@/share/ShareModals';
@@ -110,7 +111,12 @@ export default function RootLayout({
       // Suppress hydration errors due to next-themes behavior
       suppressHydrationWarning
     >
-      <head />
+      <head>
+        {STORAGE_PRECONNECT_HOSTS.map(host =>
+          // eslint-disable-next-line max-len
+          <link key={host} rel="preconnect" href={host} crossOrigin="anonymous" />,
+        )}
+      </head>
       <body className={clsx(
         // Center on large screens
         '3xl:flex flex-col items-center',

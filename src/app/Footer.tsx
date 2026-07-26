@@ -5,7 +5,7 @@ import AppGrid from '../components/AppGrid';
 import ThemeSwitcher from '@/app/ThemeSwitcher';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PATH_ADMIN_PHOTOS, isPathAdmin, isPathSignIn } from './path';
+import { PATH_ADMIN_PHOTOS, isPathSignIn } from './path';
 import SubmitButtonWithStatus from '@/components/SubmitButtonWithStatus';
 import { signOutAction } from '@/auth/actions';
 import AnimateItems from '@/components/AnimateItems';
@@ -27,15 +27,11 @@ export default function Footer() {
 
   const showFooter = !isPathSignIn(pathname);
 
-  const shouldAnimate = !isPathAdmin(pathname);
-
   return (
     <AppGrid
       contentMain={
         <AnimateItems
-          animateOnFirstLoadOnly
-          type={!shouldAnimate ? 'none' : 'bottom'}
-          distanceOffset={10}
+          type="none"
           items={showFooter
             ? [<div
               key="footer"

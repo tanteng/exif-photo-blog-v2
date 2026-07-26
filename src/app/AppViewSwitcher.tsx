@@ -38,7 +38,7 @@ const GAP_CLASS_LEFT  = 'ml-0.5 sm:ml-1';
 export default function AppViewSwitcher({
   currentSelection,
   className,
-  animate = true,
+  animate = false,
   hideSortControl,
 }: {
   currentSelection?: SwitcherSelection

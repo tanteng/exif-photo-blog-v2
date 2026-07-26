@@ -32,10 +32,8 @@ export default function HeaderList({
 
   return (
     <AnimateItems
+      type="none"
       className={className}
-      scaleOffset={0.95}
-      duration={0.5}
-      staggerDelay={0.05}
       items={(title || icon
         ? [<div
           key="header"

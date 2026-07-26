@@ -613,8 +613,14 @@ export const getPhotosMeta = (options: PhotoQueryOptions = {}) =>
 
 export const getAllPublicPhotoIds = async ({ limit }: { limit?: number }) =>
   safelyQuery(() => (limit
-    ? sql`SELECT id FROM photos WHERE hidden IS NOT TRUE LIMIT ${limit}`
-    : sql`SELECT id FROM photos WHERE hidden IS NOT TRUE`)
+    // Order by taken_at DESC so the pre-generated set is the most recent
+    // photos (which users actually visit). id ASC is a stable tiebreak so
+    // successive builds don't churn the EdgeOne cache key for already-cached
+    // photo IDs.
+    /* eslint-disable max-len */
+    ? sql`SELECT id FROM photos WHERE hidden IS NOT TRUE ORDER BY taken_at DESC, id ASC LIMIT ${limit}`
+    : sql`SELECT id FROM photos WHERE hidden IS NOT TRUE ORDER BY taken_at DESC, id ASC`
+    /* eslint-enable max-len */)
     .then(({ rows }) => rows.map(({ id }) => id as string))
   , 'getPublicPhotoIds');
 

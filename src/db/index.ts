@@ -9,7 +9,15 @@ import { getAlbumFromSlug } from '@/album/query';
 import { isTagPrivate } from '@/tag';
 import { getPhotoCount } from '@/photo/query';
 
-export const GENERATE_STATIC_PARAMS_LIMIT = 1000;
+// Caps how many photo / OG-image / category pages get pre-rendered at build
+// time. Photos beyond this limit become on-demand SSR; EdgeOne caches them
+// after first render, but the first request still needs the origin to be
+// alive. Tune via env if you have more photos than the default; remember each
+// extra photo costs ~3 DB queries at build time and the deploy host has only
+// ~3.6 GiB (see deploy.sh NODE_BUILD_MEM).
+export const GENERATE_STATIC_PARAMS_LIMIT = parseInt(
+  process.env.NEXT_PUBLIC_GENERATE_STATIC_PARAMS_LIMIT ?? '1000', 10,
+);
 export const PHOTO_DEFAULT_LIMIT = 100;
 
 // These must mirror utility/string.ts parameterization

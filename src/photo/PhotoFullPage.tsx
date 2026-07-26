@@ -5,6 +5,7 @@ import {
 } from '.';
 import PhotosLarge from './PhotosLarge';
 import PhotosLargeInfinite from './PhotosLargeInfinite';
+import PhotoPreloadLinks from './PhotoPreloadLinks';
 import { SortBy } from './sort';
 
 export default function PhotoFullPage({
@@ -21,6 +22,7 @@ export default function PhotoFullPage({
   const showStorageCheck = ADMIN_STORAGE_DEBUG_ENABLED;
   return (
     <div className="space-y-1">
+      <PhotoPreloadLinks photos={photos} />
       <PhotosLarge {...{ photos, showStorageCheck }} />
       {photosCount > photos.length &&
         <PhotosLargeInfinite

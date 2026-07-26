@@ -105,7 +105,7 @@ export default function PhotoGrid({
                 photo,
                 ...categories,
                 selected: isSelected,
-                priority: prioritizeInitialPhotos ? index < 6 : undefined,
+                priority: prioritizeInitialPhotos ? index < 18 : undefined,
                 onVisible: index === photos.length - 1
                   ? onLastPhotoVisible
                   : undefined,

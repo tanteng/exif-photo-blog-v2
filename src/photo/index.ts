@@ -25,7 +25,7 @@ import { PhotoColorData } from './color/client';
 
 // INFINITE SCROLL: FULL
 export const INFINITE_SCROLL_FULL_INITIAL =
-  process.env.NODE_ENV === 'development' ? 2 : 12;
+  process.env.NODE_ENV === 'development' ? 2 : 24;
 export const INFINITE_SCROLL_FULL_MULTIPLE =
   process.env.NODE_ENV === 'development' ? 2 : 24;
 

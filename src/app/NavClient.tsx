@@ -21,7 +21,6 @@ import {
 } from './config';
 import { useRef } from 'react';
 import useStickyNav from './useStickyNav';
-import { useAppState } from '@/app/AppState';
 
 const NAV_HEIGHT_CLASS = NAV_CAPTION
   ? 'min-h-[4rem] sm:min-h-[5rem]'
@@ -30,11 +29,9 @@ const NAV_HEIGHT_CLASS = NAV_CAPTION
 export default function NavClient({
   navTitle,
   navCaption,
-  isInEmptyState,
 }: {
   navTitle: string
   navCaption?: string
-  isInEmptyState: boolean
 }) {
   const ref = useRef<HTMLElement>(null);
 
@@ -42,13 +39,8 @@ export default function NavClient({
   const showNav = !isPathSignIn(pathname);
 
   const {
-    hasLoadedWithAnimations,
-  } = useAppState();
-
-  const {
     classNameStickyContainer,
     classNameStickyNav,
-    isNavVisible,
   } = useStickyNav(ref, !isPathAdmin(pathname));
 
   const renderLink = (
@@ -79,9 +71,7 @@ export default function NavClient({
       classNameMain='pointer-events-auto'
       contentMain={
         <AnimateItems
-          animateOnFirstLoadOnly
-          type={!isInEmptyState && !isPathAdmin(pathname) ? 'bottom' : 'none'}
-          distanceOffset={10}
+          type="none"
           items={showNav
             ? [<nav
               key="nav"
@@ -96,8 +86,6 @@ export default function NavClient({
               <AppViewSwitcher
                 currentSelection={switcherSelectionForPath()}
                 className="translate-x-[-1px]"
-                animate={hasLoadedWithAnimations && isNavVisible}
-                hideSortControl={isInEmptyState}
               />
               <div className={clsx(
                 'grow text-right min-w-0',
