@@ -28,7 +28,7 @@
       "RuleName": "edge-cache-photo-og",
       "Branches": [
         {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/p/*/image']",
+          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} like ['/p/*/image']",
           "Actions": [
             {
               "Name": "Cache",
@@ -60,7 +60,7 @@
       "RuleName": "edge-cache-photo-page",
       "Branches": [
         {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/p/*']",
+          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} like ['/p/*']",
           "Actions": [
             {
               "Name": "Cache",
@@ -92,99 +92,29 @@
       "RuleName": "edge-cache-listing",
       "Branches": [
         {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/tag/*']",
+          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} like ['/tag/*', '/album/*', '/camera/*', '/lens/*', '/recipe/*', '/film/*', '/focal/*', '/year/*', '/shot-on/*', '/grid/*', '/full/*', '/recents/*']",
           "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/album/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/camera/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/lens/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/recipe/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/film/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/focal/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/year/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/shot-on/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/grid/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/full/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
-          ]
-        },
-        {
-          "Condition": "${http.request.host} in ['photos.tanteng.space'] and ${http.request.uri.path} wildcard ['/recents/*']",
-          "Actions": [
-            { "Name": "Cache",         "CacheParameters":         { "CustomTime": { "Switch": "on", "CacheTime": 86400 } } },
-            { "Name": "CachePrefresh", "CachePrefreshParameters": { "Switch": "on" } },
-            { "Name": "OfflineCache",  "OfflineCacheParameters":  { "Switch": "on" } }
+            {
+              "Name": "Cache",
+              "CacheParameters": {
+                "CustomTime": {
+                  "Switch": "on",
+                  "CacheTime": 86400
+                }
+              }
+            },
+            {
+              "Name": "CachePrefresh",
+              "CachePrefreshParameters": {
+                "Switch": "on"
+              }
+            },
+            {
+              "Name": "OfflineCache",
+              "OfflineCacheParameters": {
+                "Switch": "on"
+              }
+            }
           ]
         }
       ],
