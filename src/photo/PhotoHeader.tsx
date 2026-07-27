@@ -118,8 +118,6 @@ export default function PhotoHeader({
   return (
     <AnimateItems
       type="none"
-      distanceOffset={10}
-      animateOnFirstLoadOnly
       items={[<Fragment key="PhotoHeader">
         {renderBlock(<>
           {/* Content A: Filter Set or Photo Title */}

@@ -162,7 +162,7 @@ export default function AboutPageClient({
 
   return (
     <AnimateItems
-      type="bottom"
+      type="none"
       items={[<div
         key="about-page"
         className="space-y-12 mt-5"

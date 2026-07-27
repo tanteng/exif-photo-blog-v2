@@ -59,12 +59,11 @@ export default async function PrivateTagPage() {
     <AppGrid
       contentMain={<div className="space-y-4 mt-4">
         <AnimateItems
-          type="bottom"
+          type="none"
           items={[<PrivateHeader
             key="PrivateHeader"
             {...{ photos, count, dateRange }}
           />]}
-          animateOnFirstLoadOnly
         />
         <div className="space-y-6">
           <Note animate>
