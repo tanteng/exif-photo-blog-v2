@@ -117,7 +117,7 @@ export default function PhotoHeader({
 
   return (
     <AnimateItems
-      type="bottom"
+      type="none"
       distanceOffset={10}
       animateOnFirstLoadOnly
       items={[<Fragment key="PhotoHeader">
