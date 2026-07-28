@@ -194,6 +194,7 @@ export default function AppViewSwitcher({
         animate={{ opacity: 1, width: showSortControl ? 'auto' : '0' }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
       >
+        {showSortControl && (
         <Switcher
           className={clsx('max-sm:hidden', GAP_CLASS_LEFT)}
           type="borderless"
@@ -238,6 +239,7 @@ export default function AppViewSwitcher({
               noPadding
             />}
         </Switcher>
+        )}
       </motion.div>
       <Switcher type="borderless">
         <SwitcherItem
