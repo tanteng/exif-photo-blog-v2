@@ -75,10 +75,18 @@ export default function InfinitePhotoScroll({
   const fetcher = useCallback((
     keyWithSize: string,
     warmOnly?: boolean,
-  ) =>
-    (useCachedPhotos ? getPhotosCachedAction : getPhotosAction)({
+  ) => {
+    const fn = useCachedPhotos ? getPhotosCachedAction : getPhotosAction;
+    console.log('[SA] fetcher called', {
+      keyWithSize,
+      useCachedPhotos,
+      fnName: fn.name,
+      cacheKey,
+      ua: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
+    });
+    return fn({
       offset: initialOffset + getSizeFromKey(keyWithSize) * itemsPerPage,
-      sortBy, 
+      sortBy,
       sortWithPriority,
       excludeFromFeeds,
       limit: itemsPerPage,
@@ -91,8 +99,28 @@ export default function InfinitePhotoScroll({
       recipe,
       film,
       focal,
-    }, warmOnly)
-  , [
+    }, warmOnly).then(
+      (data) => {
+        console.log('[SA] fetcher OK', {
+          keyWithSize,
+          fnName: fn.name,
+          count: data?.length,
+        });
+        return data;
+      },
+      (err) => {
+        console.error('[SA] fetcher FAILED', {
+          keyWithSize,
+          fnName: fn.name,
+          errType: err?.constructor?.name,
+          errMessage: err?.message,
+          errDigest: err?.digest,
+          errStack: err?.stack?.slice(0, 800),
+        });
+        throw err;
+      },
+    );
+  }, [
     useCachedPhotos,
     sortBy,
     sortWithPriority,
