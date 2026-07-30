@@ -46,6 +46,7 @@ import { PATH_FEED_JSON, PATH_RSS_XML } from '@/app/path';
 import SelectPhotosProvider from '@/admin/select/SelectPhotosProvider';
 import AdminBatchEditPanel from '@/admin/select/AdminBatchEditPanel';
 import Script from 'next/script';
+import VConsoleClient from '@/app/VConsoleClient';
 
 import '../tailwind.css';
 
@@ -171,6 +172,7 @@ export default function RootLayout({
           </AppTextProvider>
         </AppStateProvider>
         {PAGE_SCRIPT_URLS.map(url => <Script key={url} src={url} />)}
+        <VConsoleClient />
       </body>
     </html>
   );

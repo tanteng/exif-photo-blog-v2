@@ -1,7 +1,7 @@
 'use client';
 
 import useSwrInfinite from 'swr/infinite';
-import { ReactNode, useCallback, useMemo, useRef } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppGrid from '@/components/AppGrid';
 import Spinner from '@/components/Spinner';
 import { getPhotosCachedAction, getPhotosAction } from '@/photo/actions';
@@ -17,6 +17,10 @@ import { useAppText } from '@/i18n/state/client';
 const SIZE_KEY_SEPARATOR = '__';
 const getSizeFromKey = (key: string) =>
   parseInt(key.split(SIZE_KEY_SEPARATOR)[1]);
+
+// If a page is loading for longer than this, surface a clickable
+// button instead of an endless spinner so the user can manually retry.
+const STALL_TIMEOUT_MS = 8_000;
 
 export type RevalidatePhoto = (
   photoId: string,
@@ -64,6 +68,15 @@ export default function InfinitePhotoScroll({
   const { isUserSignedIn } = useAppState();
   
   const { utility } = useAppText();
+
+  useEffect(() => {
+    console.log('[SA] mount', {
+      cacheKey,
+      initialOffset,
+      ua: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const keyGenerator = useCallback(
     (size: number, prev: Photo[]) => prev && prev.length === 0
@@ -150,13 +163,46 @@ export default function InfinitePhotoScroll({
       },
     );
 
+  const [stallFallback, setStallFallback] = useState(false);
+
   const buttonContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const isLoadingOrValidating = isLoading || isValidating;
 
   const isFinished = useMemo(() =>
     data && data[data.length - 1]?.length < itemsPerPage
   , [data, itemsPerPage]);
+
+  // If loading persists beyond STALL_TIMEOUT_MS, switch the spinner to a
+  // clickable button so users can manually retry instead of an endless
+  // spinner (e.g. when a fetch is silently hanging on iOS QQ Browser).
+  useEffect(() => {
+    if (!isLoadingOrValidating) {
+      setStallFallback(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      console.warn('[SA] stall detected', {
+        cacheKey,
+        isLoading,
+        isValidating,
+        dataLen: data?.length ?? 0,
+      });
+      setStallFallback(true);
+    }, STALL_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [cacheKey, isLoadingOrValidating, isLoading, isValidating, data]);
+
+  if (typeof window !== 'undefined') {
+    console.log('[SA] render', {
+      cacheKey,
+      isFinished,
+      isLoadingOrValidating,
+      hasError: Boolean(error),
+      stallFallback,
+      dataLen: data?.length ?? 0,
+    });
+  }
 
   const advance = useCallback(() => {
     // On error, do NOT auto-advance (e.g. from useVisibility). Otherwise a
@@ -186,18 +232,20 @@ export default function InfinitePhotoScroll({
     <div ref={buttonContainerRef}>
       <button
         type="button"
-        onClick={() => error ? mutate() : advance()}
-        disabled={isLoading || isValidating}
+        onClick={() => (error || stallFallback) ? mutate() : advance()}
+        disabled={isLoadingOrValidating && !stallFallback}
         className={clsx(
           'w-full flex justify-center',
-          isLoadingOrValidating && 'subtle',
+          isLoadingOrValidating && !stallFallback && 'subtle',
         )}
       >
         {error
           ? utility.tryAgain
-          : isLoadingOrValidating
-            ? <Spinner size={20} />
-            : utility.loadMore}
+          : stallFallback
+            ? utility.loadMore
+            : isLoadingOrValidating
+              ? <Spinner size={20} />
+              : utility.loadMore}
       </button>
     </div>;
 
