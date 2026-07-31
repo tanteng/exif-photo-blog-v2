@@ -2,7 +2,7 @@
 
 import Script from 'next/script';
 
-const VCONSOLE_SRC = 'https://unpkg.com/vconsole@latest/dist/vconsole.min.js';
+const VCONSOLE_SRC = '/vconsole.min.js';
 
 /**
  * Mobile web console for browsers without DevTools (e.g. iOS QQ Browser).
@@ -22,9 +22,12 @@ export default function VConsoleClient() {
             var s = document.createElement('script');
             s.src = ${JSON.stringify(VCONSOLE_SRC)};
             s.async = true;
-            s.onload = function () { try { new window.VConsole(); } catch (e) {} };
+            s.onload = function () { try { new window.VConsole(); } catch (e) { console.warn('[vconsole] init failed', e); } };
+            s.onerror = function () { console.warn('[vconsole] failed to load', s.src); };
             document.head.appendChild(s);
-          } catch (e) {}
+          } catch (e) {
+            console.warn('[vconsole] loader failed', e);
+          }
         })();
       `}
     </Script>
