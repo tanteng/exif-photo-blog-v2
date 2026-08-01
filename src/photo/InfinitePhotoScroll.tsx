@@ -4,13 +4,11 @@ import useSwrInfinite from 'swr/infinite';
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppGrid from '@/components/AppGrid';
 import Spinner from '@/components/Spinner';
-import { getPhotosCachedAction, getPhotosAction } from '@/photo/actions';
 import { Photo } from '.';
 import { PhotoSetCategory } from '../category';
 import { clsx } from 'clsx/lite';
 import { useAppState } from '@/app/AppState';
 import useVisibility from '@/utility/useVisibility';
-import { supportsReadableStream } from '@/utility/streams';
 import { SortBy } from './sort';
 import { SWR_KEYS } from '@/swr';
 import { useAppText } from '@/i18n/state/client';
@@ -79,18 +77,10 @@ export default function InfinitePhotoScroll({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Dual-layer fallback for browsers without functional ReadableStream
-  // support (e.g. iOS QQ Browser):
-  //   1. Proactive detection on mount — tests Response.body.getReader().
-  //   2. Runtime recovery — if a Server Action call still fails with a
-  //      getReader TypeError, catch it, switch to JSON, and retry.
-  // useState (not useMemo) so it can be updated at runtime by layer 2.
-  const [useJsonFallback, setUseJsonFallback] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const supported = supportsReadableStream();
-    console.log('[SA] ReadableStream support', { supported, cacheKey });
-    return !supported;
-  });
+  // Always use the JSON API (GET /api/photos) for pagination.
+  // GET requests use the URL as cache key, enabling EdgeOne CDN caching.
+  // (Previously Server Actions (POST RSC) were used, but their responses
+  // cannot be cached by CDNs since POST bodies aren't part of the cache key.)
 
   const keyGenerator = useCallback(
     (size: number, prev: Photo[]) => prev && prev.length === 0
@@ -99,75 +89,8 @@ export default function InfinitePhotoScroll({
       : `${SWR_KEYS.INFINITE_PHOTO_SCROLL}-${cacheKey}${SIZE_KEY_SEPARATOR}${size}`
     , [cacheKey]);
 
-  const saFetcher = useCallback((
-    keyWithSize: string,
-    warmOnly?: boolean,
-  ) => {
-    const fn = useCachedPhotos ? getPhotosCachedAction : getPhotosAction;
-    console.log('[SA] fetcher called', {
-      keyWithSize,
-      useCachedPhotos,
-      fnName: fn.name,
-      cacheKey,
-      ua: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
-    });
-    return fn({
-      offset: initialOffset + getSizeFromKey(keyWithSize) * itemsPerPage,
-      sortBy,
-      sortWithPriority,
-      excludeFromFeeds,
-      limit: itemsPerPage,
-      hidden: includeHiddenPhotos ? 'include' : 'exclude',
-      recent,
-      year,
-      camera,
-      lens,
-      tag,
-      recipe,
-      film,
-      focal,
-    }, warmOnly).then(
-      (data) => {
-        console.log('[SA] fetcher OK', {
-          keyWithSize,
-          fnName: fn.name,
-          count: data?.length,
-        });
-        return data;
-      },
-      (err) => {
-        console.error('[SA] fetcher FAILED', {
-          keyWithSize,
-          fnName: fn.name,
-          errType: err?.constructor?.name,
-          errMessage: err?.message,
-          errDigest: err?.digest,
-          errStack: err?.stack?.slice(0, 800),
-        });
-        throw err;
-      },
-    );
-  }, [
-    useCachedPhotos,
-    sortBy,
-    sortWithPriority,
-    excludeFromFeeds,
-    initialOffset,
-    itemsPerPage,
-    includeHiddenPhotos,
-    recent,
-    year,
-    camera,
-    lens,
-    tag,
-    recipe,
-    film,
-    focal,
-  ]);
-
-  // JSON API fallback for browsers without ReadableStream support.
-  // Calls a regular REST endpoint instead of the Server Action, avoiding
-  // the RSC streaming path that requires ReadableStream.getReader().
+  // Fetch paginated photos via the JSON API (GET /api/photos?q=...).
+  // GET requests are cacheable by EdgeOne CDN, reducing origin load.
   const jsonFetcher = useCallback(async (
     keyWithSize: string,
     warmOnly?: boolean,
@@ -236,43 +159,7 @@ export default function InfinitePhotoScroll({
     focal,
   ]);
 
-  // Try Server Action first. If it fails with a getReader TypeError
-  // (ReadableStream broken on this browser), retry with JSON API and
-  // permanently switch to JSON for subsequent fetches.
-  const fetcher = useCallback(async (
-    keyWithSize: string,
-    warmOnly?: boolean,
-  ) => {
-    if (useJsonFallback) {
-      return jsonFetcher(keyWithSize, warmOnly);
-    }
-    try {
-      return await saFetcher(keyWithSize, warmOnly);
-    } catch (err: any) {
-      // Layer 2: runtime recovery — if the SA call itself throws a
-      // TypeError that smells like a ReadableStream issue, switch to
-      // JSON and retry immediately. This catches browsers where the
-      // proactive detection (layer 1) incorrectly said "supported".
-      const isStreamError =
-        err instanceof TypeError &&
-        (
-          (typeof err.message === 'string' && (
-            err.message.includes('getReader') ||
-            err.message.includes('not an object')
-          )) ||
-          (typeof err.stack === 'string' && err.stack.includes('getReader'))
-        );
-      if (isStreamError) {
-        console.warn('[SA] Switching to JSON fallback after stream error', {
-          cacheKey,
-          errMessage: err.message,
-        });
-        setUseJsonFallback(true);
-        return jsonFetcher(keyWithSize, warmOnly);
-      }
-      throw err;
-    }
-  }, [useJsonFallback, saFetcher, jsonFetcher, cacheKey]);
+  const fetcher = jsonFetcher;
 
   const { data, isLoading, isValidating, error, mutate, setSize } =
     useSwrInfinite<Photo[]>(
@@ -323,7 +210,6 @@ export default function InfinitePhotoScroll({
       isLoadingOrValidating,
       hasError: Boolean(error),
       stallFallback,
-      useJsonFallback,
       dataLen: data?.length ?? 0,
     });
   }
