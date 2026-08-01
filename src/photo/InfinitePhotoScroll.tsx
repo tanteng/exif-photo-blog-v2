@@ -79,17 +79,18 @@ export default function InfinitePhotoScroll({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Detect browsers that lack ReadableStream support (e.g. iOS QQ Browser).
-  // On such browsers Server Actions fail because Next.js internally calls
-  // response.body.getReader() on the RSC streaming response. When detected,
-  // fall back to the /api/photos JSON endpoint.
-  const useJsonFallback = useMemo(() => {
+  // Dual-layer fallback for browsers without functional ReadableStream
+  // support (e.g. iOS QQ Browser):
+  //   1. Proactive detection on mount — tests Response.body.getReader().
+  //   2. Runtime recovery — if a Server Action call still fails with a
+  //      getReader TypeError, catch it, switch to JSON, and retry.
+  // useState (not useMemo) so it can be updated at runtime by layer 2.
+  const [useJsonFallback, setUseJsonFallback] = useState(() => {
     if (typeof window === 'undefined') return false;
     const supported = supportsReadableStream();
     console.log('[SA] ReadableStream support', { supported, cacheKey });
     return !supported;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const keyGenerator = useCallback(
     (size: number, prev: Photo[]) => prev && prev.length === 0
@@ -235,7 +236,43 @@ export default function InfinitePhotoScroll({
     focal,
   ]);
 
-  const fetcher = useJsonFallback ? jsonFetcher : saFetcher;
+  // Try Server Action first. If it fails with a getReader TypeError
+  // (ReadableStream broken on this browser), retry with JSON API and
+  // permanently switch to JSON for subsequent fetches.
+  const fetcher = useCallback(async (
+    keyWithSize: string,
+    warmOnly?: boolean,
+  ) => {
+    if (useJsonFallback) {
+      return jsonFetcher(keyWithSize, warmOnly);
+    }
+    try {
+      return await saFetcher(keyWithSize, warmOnly);
+    } catch (err: any) {
+      // Layer 2: runtime recovery — if the SA call itself throws a
+      // TypeError that smells like a ReadableStream issue, switch to
+      // JSON and retry immediately. This catches browsers where the
+      // proactive detection (layer 1) incorrectly said "supported".
+      const isStreamError =
+        err instanceof TypeError &&
+        (
+          (typeof err.message === 'string' && (
+            err.message.includes('getReader') ||
+            err.message.includes('not an object')
+          )) ||
+          (typeof err.stack === 'string' && err.stack.includes('getReader'))
+        );
+      if (isStreamError) {
+        console.warn('[SA] Switching to JSON fallback after stream error', {
+          cacheKey,
+          errMessage: err.message,
+        });
+        setUseJsonFallback(true);
+        return jsonFetcher(keyWithSize, warmOnly);
+      }
+      throw err;
+    }
+  }, [useJsonFallback, saFetcher, jsonFetcher, cacheKey]);
 
   const { data, isLoading, isValidating, error, mutate, setSize } =
     useSwrInfinite<Photo[]>(
