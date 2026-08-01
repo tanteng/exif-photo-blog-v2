@@ -10,6 +10,7 @@ import { PhotoSetCategory } from '../category';
 import { clsx } from 'clsx/lite';
 import { useAppState } from '@/app/AppState';
 import useVisibility from '@/utility/useVisibility';
+import { supportsReadableStream } from '@/utility/streams';
 import { SortBy } from './sort';
 import { SWR_KEYS } from '@/swr';
 import { useAppText } from '@/i18n/state/client';
@@ -78,6 +79,18 @@ export default function InfinitePhotoScroll({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Detect browsers that lack ReadableStream support (e.g. iOS QQ Browser).
+  // On such browsers Server Actions fail because Next.js internally calls
+  // response.body.getReader() on the RSC streaming response. When detected,
+  // fall back to the /api/photos JSON endpoint.
+  const useJsonFallback = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const supported = supportsReadableStream();
+    console.log('[SA] ReadableStream support', { supported, cacheKey });
+    return !supported;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const keyGenerator = useCallback(
     (size: number, prev: Photo[]) => prev && prev.length === 0
       ? null
@@ -85,7 +98,7 @@ export default function InfinitePhotoScroll({
       : `${SWR_KEYS.INFINITE_PHOTO_SCROLL}-${cacheKey}${SIZE_KEY_SEPARATOR}${size}`
     , [cacheKey]);
 
-  const fetcher = useCallback((
+  const saFetcher = useCallback((
     keyWithSize: string,
     warmOnly?: boolean,
   ) => {
@@ -151,6 +164,79 @@ export default function InfinitePhotoScroll({
     focal,
   ]);
 
+  // JSON API fallback for browsers without ReadableStream support.
+  // Calls a regular REST endpoint instead of the Server Action, avoiding
+  // the RSC streaming path that requires ReadableStream.getReader().
+  const jsonFetcher = useCallback(async (
+    keyWithSize: string,
+    warmOnly?: boolean,
+  ) => {
+    if (warmOnly) return [];
+
+    const options = {
+      offset: initialOffset + getSizeFromKey(keyWithSize) * itemsPerPage,
+      sortBy,
+      sortWithPriority,
+      excludeFromFeeds,
+      limit: itemsPerPage,
+      hidden: includeHiddenPhotos ? 'include' : 'exclude',
+      recent,
+      year,
+      camera,
+      lens,
+      tag,
+      recipe,
+      film,
+      focal,
+    };
+
+    console.log('[JSON] fetcher called', {
+      keyWithSize,
+      cacheKey,
+      offset: options.offset,
+    });
+
+    const res = await fetch('/api/photos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('[JSON] fetcher FAILED', {
+        keyWithSize,
+        status: res.status,
+        errorText,
+      });
+      throw new Error(errorText || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log('[JSON] fetcher OK', {
+      keyWithSize,
+      count: data?.length,
+    });
+    return data;
+  }, [
+    sortBy,
+    sortWithPriority,
+    excludeFromFeeds,
+    initialOffset,
+    itemsPerPage,
+    includeHiddenPhotos,
+    recent,
+    year,
+    camera,
+    lens,
+    tag,
+    recipe,
+    film,
+    focal,
+  ]);
+
+  const fetcher = useJsonFallback ? jsonFetcher : saFetcher;
+
   const { data, isLoading, isValidating, error, mutate, setSize } =
     useSwrInfinite<Photo[]>(
       keyGenerator,
@@ -200,6 +286,7 @@ export default function InfinitePhotoScroll({
       isLoadingOrValidating,
       hasError: Boolean(error),
       stallFallback,
+      useJsonFallback,
       dataLen: data?.length ?? 0,
     });
   }
