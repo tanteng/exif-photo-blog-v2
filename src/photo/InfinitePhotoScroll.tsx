@@ -197,11 +197,11 @@ export default function InfinitePhotoScroll({
       offset: options.offset,
     });
 
-    const res = await fetch('/api/photos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(options),
-    });
+    // Use GET with query param so CDN (EdgeOne) can cache the response.
+    // The JSON payload is URL-encoded and passed as ?q=, which makes
+    // every unique request a unique URL = unique cache key.
+    const q = encodeURIComponent(JSON.stringify(options));
+    const res = await fetch(`/api/photos?q=${q}`);
 
     if (!res.ok) {
       const errorText = await res.text();
