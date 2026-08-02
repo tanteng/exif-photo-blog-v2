@@ -124,24 +124,44 @@ export default function InfinitePhotoScroll({
     // The JSON payload is URL-encoded and passed as ?q=, which makes
     // every unique request a unique URL = unique cache key.
     const q = encodeURIComponent(JSON.stringify(options));
-    const res = await fetch(`/api/photos?q=${q}`);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[JSON] fetcher FAILED', {
-        keyWithSize,
-        status: res.status,
-        errorText,
+    const controller = new AbortController();
+    // Abort after 30s to prevent indefinite hangs (e.g. slow DB, network
+    // issues). SWR will surface the error as a retryable state.
+    const timer = setTimeout(() => controller.abort(), 30_000);
+    try {
+      const res = await fetch(`/api/photos?q=${q}`, {
+        signal: controller.signal,
       });
-      throw new Error(errorText || `HTTP ${res.status}`);
-    }
 
-    const data = await res.json();
-    console.log('[JSON] fetcher OK', {
-      keyWithSize,
-      count: data?.length,
-    });
-    return data;
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[JSON] fetcher FAILED', {
+          keyWithSize,
+          status: res.status,
+          errorText,
+        });
+        throw new Error(errorText || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('[JSON] fetcher OK', {
+        keyWithSize,
+        count: data?.length,
+      });
+      return data;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error('[JSON] fetcher TIMEOUT (30s)', {
+          keyWithSize,
+          cacheKey,
+          offset: options.offset,
+        });
+        throw new Error('Request timed out');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }, [
     sortBy,
     sortWithPriority,
