@@ -32,9 +32,7 @@ import { INITIAL_UPLOAD_STATE, UploadState } from '@/admin/upload';
 import { RecipeProps } from '@/recipe';
 import { nanoid } from 'nanoid';
 import { toastSuccess } from '@/toast';
-import { getCountsForCategoriesCachedAction } from '@/category/actions';
-import {
-  canKeyBePurged,
+import { canKeyBePurged,
   canKeyBePurgedAndRevalidated,
   SWR_KEYS,
   SWRKey,
@@ -143,9 +141,17 @@ export default function AppStateProvider({
     }
   }, [mutate]);
 
+  // Replaced Server Action (POST RSC) with GET /api/categories.
+  // Server Action responses cannot be cached by CDN, but GET
+  // requests use URL as cache key → EdgeOne can cache them.
+  const categoryFetcher = useCallback(async () => {
+    const res = await fetch('/api/categories');
+    if (!res.ok) return null;
+    return res.json();
+  }, []);
   const { data: categoriesWithCounts } = useSWR(
     SWR_KEYS.GET_COUNTS_FOR_CATEGORIES,
-    getCountsForCategoriesCachedAction,
+    categoryFetcher,
   );
 
   // 用 next-auth 内置的 GET /api/auth/session 替代 Server Action getAuthAction。
