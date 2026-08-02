@@ -151,6 +151,11 @@ export default function AppStateProvider({
   // 用 next-auth 内置的 GET /api/auth/session 替代 Server Action getAuthAction。
   // Server Action 本质是 RSC POST，某些环境 (PC 首访、QQ 浏览器 X5 内核等) 会
   // 长时间不返回；GET API Route 是标准 fetch，兼容性和延迟稳定，无需超时兜底。
+  //
+  // 优化：只在需要登录态的页面（/admin/*、/sign-in）才发送请求。
+  // 公共页面（照片、标签等）99% 的访客不需要登录检测，跳过此请求。
+  const shouldCheckAuth =
+    isPathProtected(pathname) || pathname === '/sign-in';
   const authFetcher = useCallback(async (): Promise<Session | null> => {
     const res = await fetch('/api/auth/session', {
       credentials: 'same-origin',
@@ -166,7 +171,10 @@ export default function AppStateProvider({
     data: auth,
     error: authError,
     isLoading: isCheckingAuth,
-  } = useSWR(SWR_KEYS.GET_AUTH, authFetcher);
+  } = useSWR(
+    shouldCheckAuth ? SWR_KEYS.GET_AUTH : null,
+    authFetcher,
+  );
   useEffect(() => {
     if (auth === null || authError) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
