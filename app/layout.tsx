@@ -12,7 +12,6 @@ import {
   PAGE_SCRIPT_URLS,
   VERCEL_GIT_COMMIT_SHA_SHORT,
   DEBUG_OUTPUTS_ENABLED,
-  HAS_REDIS_STORAGE,
 } from '@/app/config';
 
 const ibmPlexMono = localFont({
@@ -122,7 +121,7 @@ export default function RootLayout({
         // Center on large screens
         '3xl:flex flex-col items-center',
       )}>
-        <AppStateProvider areAdminDebugToolsEnabled={ADMIN_DEBUG_TOOLS_ENABLED} hasRedis={HAS_REDIS_STORAGE}>
+        <AppStateProvider areAdminDebugToolsEnabled={ADMIN_DEBUG_TOOLS_ENABLED}>
           <AppTextProvider>
             <SelectPhotosProvider>
               <ThemeColors />

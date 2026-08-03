@@ -14,7 +14,6 @@ import useSWR, { useSWRConfig } from 'swr';
 import {
   HIGH_DENSITY_GRID,
   IS_DEVELOPMENT,
-  IS_PRODUCTION,
   MATTE_PHOTOS,
   SHOW_ZOOM_CONTROLS,
 } from '@/app/config';
@@ -37,17 +36,14 @@ import { canKeyBePurged,
   SWR_KEYS,
   SWRKey,
 } from '@/swr';
-import { warmRedisAction } from './actions';
 import useSupportsHover from '@/utility/useSupportsHover';
 
 export default function AppStateProvider({
   children,
   areAdminDebugToolsEnabled,
-  hasRedis,
 }: {
   children: ReactNode
   areAdminDebugToolsEnabled?: boolean
-  hasRedis?: boolean
 }) {
   const router = useRouter();
 
@@ -122,7 +118,6 @@ export default function AppStateProvider({
     setUserEmailEager(getAuthEmailCookie());
     // Capture backup timezone on client
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
-    if (IS_PRODUCTION && hasRedis) { warmRedisAction(); }
     const timeout = setTimeout(() => {
       setHasLoadedWithAnimations(true);
     }, 1000);

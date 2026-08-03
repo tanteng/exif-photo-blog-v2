@@ -9,7 +9,6 @@ import Spinner from '../Spinner';
 import ResponsiveText from '../primitives/ResponsiveText';
 import { SHOW_CATEGORY_IMAGE_HOVERS } from '@/app/config';
 import EntityHover from './EntityHover';
-import { getPhotosCachedAction } from '@/photo/actions';
 import { PhotoQueryOptions } from '@/db';
 import { MAX_PHOTOS_TO_SHOW_PER_CATEGORY } from '@/image-response';
 
@@ -196,11 +195,14 @@ export default function EntityLink({
           hoverKey={path}
           header={renderLink(true)}
           photosCount={hoverCount}
-          getPhotos={() =>
-            getPhotosCachedAction({
+          getPhotos={() => {
+            const options = {
               ...hoverQueryOptions,
               limit: MAX_PHOTOS_TO_SHOW_PER_CATEGORY,
-            })}
+            };
+            const q = encodeURIComponent(JSON.stringify(options));
+            return fetch(`/api/photos?q=${q}`).then(r => r.json());
+          }}
           color={contrast === 'frosted' ? 'frosted' : undefined}
         >
           {renderLink()}
