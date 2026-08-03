@@ -177,7 +177,10 @@ export default function AppStateProvider({
     authFetcher,
   );
   useEffect(() => {
-    if (auth === null || authError) {
+    // Clear email state when:
+    // 1. On a public page (shouldCheckAuth=false) → no auth check needed
+    // 2. Auth returns null/error → user is not logged in
+    if (!shouldCheckAuth || auth === null || authError) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserEmail(undefined);
       setUserEmailEager(undefined);
@@ -185,7 +188,7 @@ export default function AppStateProvider({
     } else {
       setUserEmail(auth?.user?.email ?? undefined);
     }
-  }, [auth, authError]);
+  }, [shouldCheckAuth, auth, authError, clearAuthEmailCookie]);
 
   const {
     data: adminData,
