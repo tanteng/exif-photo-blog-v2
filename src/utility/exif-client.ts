@@ -193,18 +193,11 @@ export const pngToJpegWithExif = async (
   const ab = await readAsArrayBuffer(file);
   const rawExif = extractExifFromPNG(ab); // Uint8Array | null
 
-  // Decode the PNG for drawing
-  const img = document.createElement('img');
-  img.crossOrigin = 'anonymous'; // for remote URLs with CORS, harmless for File
-  img.src = URL.createObjectURL(file);
-  await new Promise<void>((res, rej) => {
-    img.onload = () => res();
-    img.onerror = () => rej(new Error('Image load failed'));
-  });
-
-  // Prefer ImageBitmap with orientation applied by decoder
+  // Decode the PNG with EXIF orientation applied at decode time.
+  // Pass the File (Blob) directly to createImageBitmap — assigning the
+  // blob to img.src would be blocked by the CDN's `img-src` CSP.
   const bitmap = await createImageBitmap(
-    img,
+    file,
     { imageOrientation: 'from-image' },
   );
 
@@ -214,8 +207,6 @@ export const pngToJpegWithExif = async (
   // Insert EXIF (and normalize Orientation)
   const outBlob = await insertExifIntoJpegBlob(jpegBlob, rawExif);
 
-  // cleanup
-  URL.revokeObjectURL(img.src);
   bitmap.close?.();
 
   return outBlob;
@@ -235,18 +226,11 @@ export const jpgToJpegWithExif = async (
   const ab = await readAsArrayBuffer(file);
   const rawExif = extractExifFromJpeg(ab); // Uint8Array | null
 
-  // Decode the JPEG for drawing
-  const img = document.createElement('img');
-  img.crossOrigin = 'anonymous'; // for remote URLs with CORS, harmless for File
-  img.src = URL.createObjectURL(file);
-  await new Promise<void>((res, rej) => {
-    img.onload = () => res();
-    img.onerror = () => rej(new Error('Image load failed'));
-  });
-
-  // Prefer ImageBitmap with orientation applied by decoder
+  // Decode the JPEG with EXIF orientation applied at decode time.
+  // Pass the File (Blob) directly to createImageBitmap — assigning the
+  // blob to img.src would be blocked by the CDN's `img-src` CSP.
   const bitmap = await createImageBitmap(
-    img,
+    file,
     { imageOrientation: 'from-image' },
   );
 
@@ -256,8 +240,6 @@ export const jpgToJpegWithExif = async (
   // Insert EXIF (and normalize Orientation)
   const outBlob = await insertExifIntoJpegBlob(jpegBlob, rawExif);
 
-  // cleanup
-  URL.revokeObjectURL(img.src);
   bitmap.close?.();
 
   return outBlob;
