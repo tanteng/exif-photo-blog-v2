@@ -127,6 +127,7 @@ export default function EntityLink({
       isLoading={isLoading}
       setIsLoading={setIsLoading}
       target={pathTarget}
+      prefetch={prefetch}
     >
       <LabeledIcon {...{
         icon: badged && hasBadgeIcon && !useForHover

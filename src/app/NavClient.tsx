@@ -48,7 +48,7 @@ export default function NavClient({
     linkOrAction: string | (() => void),
   ) =>
     typeof linkOrAction === 'string'
-      ? <Link href={linkOrAction}>{text}</Link>
+      ? <Link href={linkOrAction} prefetch={false}>{text}</Link>
       : <button onClick={linkOrAction} type="button">{text}</button>;
 
   const switcherSelectionForPath = (): SwitcherSelection | undefined => {

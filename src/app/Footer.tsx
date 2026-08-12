@@ -48,6 +48,7 @@ export default function Footer() {
                     <Link
                       href={PATH_ADMIN_PHOTOS}
                       className="truncate max-w-full max-sm:hidden"
+                      prefetch={false}
                     >
                       {userEmail || userEmailEager}
                     </Link>
