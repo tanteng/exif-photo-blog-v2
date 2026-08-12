@@ -122,6 +122,7 @@ export default function AppViewSwitcher({
         keyCommand: KEY_COMMANDS.full,
       }}}
       noPadding
+      prefetch={false}
     />;
 
   const renderItemGrid =
@@ -159,6 +160,7 @@ export default function AppViewSwitcher({
               keyCommand: KEY_COMMANDS.about,
             }}}
             noPadding
+            prefetch={false}
           />}
         {/* Show spinner if admin is suspected to be logged in */}
         {(isUserSignedInEager && !isUserSignedIn) &&
