@@ -23,6 +23,19 @@ export const {
       },
     }),
   ],
+  // Disable NextAuth's sliding-session refresh: by default updateAge
+  // is 24h, meaning every auth() call on a session older than 24h
+  // re-issues the JWT and emits a Set-Cookie header. That breaks
+  // EdgeOne caching for any response that runs auth() (e.g. tag pages
+  // historically). Setting updateAge equal to maxAge means the JWT is
+  // only refreshed on actual sign-in/sign-out, never on reads.
+  // Trade-off: admin sessions last exactly 30 days from sign-in, with
+  // no auto-extension on activity.
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 30 * 24 * 60 * 60,
+  },
   callbacks: {
     authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
