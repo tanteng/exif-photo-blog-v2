@@ -19,7 +19,7 @@ export default function PhotoMedium({
   photo,
   selected,
   priority,
-  prefetch = false,
+  prefetch = true,
   className,
   onVisible,
   debugColor,

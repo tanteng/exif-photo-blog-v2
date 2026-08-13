@@ -15,7 +15,7 @@ export default function PhotoSmall({
   photo,
   selected,
   className,
-  prefetch = false,
+  prefetch = true,
   onVisible,
   ...categories
 }: {

@@ -136,6 +136,7 @@ export default function AppViewSwitcher({
         keyCommand: KEY_COMMANDS.grid,
       }}}
       noPadding
+      prefetch={false}
     />;
 
   return (
@@ -239,6 +240,7 @@ export default function AppViewSwitcher({
               }}}
               width="narrow"
               noPadding
+              prefetch={false}
             />}
         </Switcher>
         )}
